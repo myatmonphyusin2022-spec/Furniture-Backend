@@ -8,7 +8,16 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/Category'
+export type * from './models/Order'
 export type * from './models/Post'
-export type * from './models/Profile'
+export type * from './models/Product'
+export type * from './models/ProductsOnOrders'
+export type * from './models/PostTag'
+export type * from './models/ProductTag'
+export type * from './models/Type'
 export type * from './models/User'
+export type * from './models/Image'
+export type * from './models/Setting'
+export type * from './models/Otp'
 export type * from './commonInputTypes'

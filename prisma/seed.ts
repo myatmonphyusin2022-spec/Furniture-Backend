@@ -1,44 +1,66 @@
-import {PrismaClient, Prisma} from "@prisma/client";
+import { PrismaClient, Prisma } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import "dotenv/config";
 import * as bcrypt from "bcrypt";
 
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData: Prisma.UserCreateInput[] = [
-    {
-        phone: '448024137',
-        password: "",
-        randomToken: "hjjjsrnsovenv",
-    },
-     {
-        phone: '448024134',
-        password: "",
-        randomToken: "hjjjsrnsovenv",
-    },
-     {
-        phone: '448024135',
-        password: "",
-        randomToken: "hjjjsrnsovenv",
-    },
-     {
-        phone: '448024136',
-        password: "",
-        randomToken: "hjjjsrnsovenv",
-    },
-     {
-        phone: '448024139',
-        password: "",
-        randomToken: "hjjjsrnsovenv",
-    },
+  {
+    phone: "778661260",
+    password: "",
+    randToken: "sfwfx23rbkxg982ntxf87",
+  },
+  {
+    phone: "778661261",
+    password: "",
+    randToken: "sfwfx23rbkxg982ntxf87",
+  },
+  {
+    phone: "778661262",
+    password: "",
+    randToken: "sfwfx23rbkxg982ntxf87",
+  },
+  {
+    phone: "778661263",
+    password: "",
+    randToken: "sfwfx23rbkxg982ntxf87",
+  },
+  {
+    phone: "778661264",
+    password: "",
+    randToken: "sfwfx23rbkxg982ntxf87",
+  },
 ];
+
+
+
 async function main() {
-    console.log(`Start seeding ...`);
-    for (const user of userData) {
-        const password = await bcrypt.hash(user.phone, 10);
-        user.password = password;
-        await prisma.user.create({
-            data: user,
-        });
-    }
-    console.log(`Seeding finished.`);
+  console.log(`Start seeding ...`);
+  const salt = await bcrypt.genSalt(10);
+  const password = await bcrypt.hash("12345678", salt);
+
+  for (const u of userData) {
+    u.password = password;
+    await prisma.user.create({
+      data: u,
+    });
+  }
+  console.log(`Seeding finished.`);
 }
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

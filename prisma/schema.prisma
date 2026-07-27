@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client" // Prisma 7 is Rust-free, so it is written in Typescript 
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL") // Prisma 7 does not contain url here
 }
 
 model Category {
