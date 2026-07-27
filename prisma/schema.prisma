@@ -1,10 +1,9 @@
 generator client {
-  provider = "prisma-client" // Prisma 7 is Rust-free, so it is written in Typescript 
+  provider = "prisma-client"
 }
 
 datasource db {
   provider = "postgresql"
-  // url      = env("DATABASE_URL") // Prisma 7 does not contain url here
 }
 
 model Category {
@@ -32,9 +31,9 @@ model Otp {
   rememberToken String
   verifyToken   String?
   count         Int      @default(0) @db.SmallInt
+  error         Int      @default(0) @db.SmallInt
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  error         Int      @default(0) @db.SmallInt
 }
 
 model Post {
