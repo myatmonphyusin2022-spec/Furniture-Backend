@@ -1,13 +1,7 @@
-import express from "express";
 import dotenv from "dotenv";
+import { app } from "./app";
 
 dotenv.config();
-
-const app = express();
-
-app.get("/", (req, res) => {
-  res.send("Furniture Backend is running!");
-});
 
 const PORT = process.env.PORT || 3000;
 
