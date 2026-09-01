@@ -58,16 +58,6 @@ export type PostTag = Prisma.PostTagModel
  */
 export type ProductTag = Prisma.ProductTagModel
 /**
- * Model Tag
- * 
- */
-export type Tag = Prisma.TagModel
-/**
- * Model Taggable
- * 
- */
-export type Taggable = Prisma.TaggableModel
-/**
  * Model Type
  * 
  */
@@ -87,3 +77,13 @@ export type Image = Prisma.ImageModel
  * 
  */
 export type Setting = Prisma.SettingModel
+/**
+ * Model Tag
+ * 
+ */
+export type Tag = Prisma.TagModel
+/**
+ * Model Taggable
+ * 
+ */
+export type Taggable = Prisma.TaggableModel

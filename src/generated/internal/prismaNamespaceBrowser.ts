@@ -59,12 +59,12 @@ export const ModelName = {
   ProductsOnOrders: 'ProductsOnOrders',
   PostTag: 'PostTag',
   ProductTag: 'ProductTag',
-  Tag: 'Tag',
-  Taggable: 'Taggable',
   Type: 'Type',
   User: 'User',
   Image: 'Image',
-  Setting: 'Setting'
+  Setting: 'Setting',
+  Tag: 'Tag',
+  Taggable: 'Taggable'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -111,7 +111,6 @@ export const OtpScalarFieldEnum = {
   verifyToken: 'verifyToken',
   count: 'count',
   error: 'error',
-  expiredAt: 'expiredAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -180,24 +179,6 @@ export const ProductTagScalarFieldEnum = {
 export type ProductTagScalarFieldEnum = (typeof ProductTagScalarFieldEnum)[keyof typeof ProductTagScalarFieldEnum]
 
 
-export const TagScalarFieldEnum = {
-  id: 'id',
-  name: 'name'
-} as const
-
-export type TagScalarFieldEnum = (typeof TagScalarFieldEnum)[keyof typeof TagScalarFieldEnum]
-
-
-export const TaggableScalarFieldEnum = {
-  id: 'id',
-  tagId: 'tagId',
-  type: 'type',
-  typeId: 'typeId'
-} as const
-
-export type TaggableScalarFieldEnum = (typeof TaggableScalarFieldEnum)[keyof typeof TaggableScalarFieldEnum]
-
-
 export const TypeScalarFieldEnum = {
   id: 'id',
   name: 'name'
@@ -220,7 +201,8 @@ export const UserScalarFieldEnum = {
   randToken: 'randToken',
   image: 'image',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  city: 'city'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -242,6 +224,24 @@ export const SettingScalarFieldEnum = {
 } as const
 
 export type SettingScalarFieldEnum = (typeof SettingScalarFieldEnum)[keyof typeof SettingScalarFieldEnum]
+
+
+export const TagScalarFieldEnum = {
+  id: 'id',
+  name: 'name'
+} as const
+
+export type TagScalarFieldEnum = (typeof TagScalarFieldEnum)[keyof typeof TagScalarFieldEnum]
+
+
+export const TaggableScalarFieldEnum = {
+  id: 'id',
+  tagId: 'tagId',
+  type: 'type',
+  typeId: 'typeId'
+} as const
+
+export type TaggableScalarFieldEnum = (typeof TaggableScalarFieldEnum)[keyof typeof TaggableScalarFieldEnum]
 
 
 export const SortOrder = {

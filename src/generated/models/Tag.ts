@@ -192,13 +192,13 @@ export type TagWhereInput = {
   NOT?: Prisma.TagWhereInput | Prisma.TagWhereInput[]
   id?: Prisma.IntFilter<"Tag"> | number
   name?: Prisma.StringFilter<"Tag"> | string
-  tags?: Prisma.TaggableListRelationFilter
+  Taggable?: Prisma.TaggableListRelationFilter
 }
 
 export type TagOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  tags?: Prisma.TaggableOrderByRelationAggregateInput
+  Taggable?: Prisma.TaggableOrderByRelationAggregateInput
 }
 
 export type TagWhereUniqueInput = Prisma.AtLeast<{
@@ -207,7 +207,7 @@ export type TagWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TagWhereInput[]
   NOT?: Prisma.TagWhereInput | Prisma.TagWhereInput[]
   name?: Prisma.StringFilter<"Tag"> | string
-  tags?: Prisma.TaggableListRelationFilter
+  Taggable?: Prisma.TaggableListRelationFilter
 }, "id">
 
 export type TagOrderByWithAggregationInput = {
@@ -230,24 +230,24 @@ export type TagScalarWhereWithAggregatesInput = {
 
 export type TagCreateInput = {
   name: string
-  tags?: Prisma.TaggableCreateNestedManyWithoutTagInput
+  Taggable?: Prisma.TaggableCreateNestedManyWithoutTagInput
 }
 
 export type TagUncheckedCreateInput = {
   id?: number
   name: string
-  tags?: Prisma.TaggableUncheckedCreateNestedManyWithoutTagInput
+  Taggable?: Prisma.TaggableUncheckedCreateNestedManyWithoutTagInput
 }
 
 export type TagUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.TaggableUpdateManyWithoutTagNestedInput
+  Taggable?: Prisma.TaggableUpdateManyWithoutTagNestedInput
 }
 
 export type TagUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  tags?: Prisma.TaggableUncheckedUpdateManyWithoutTagNestedInput
+  Taggable?: Prisma.TaggableUncheckedUpdateManyWithoutTagNestedInput
 }
 
 export type TagCreateManyInput = {
@@ -292,50 +292,50 @@ export type TagScalarRelationFilter = {
   isNot?: Prisma.TagWhereInput
 }
 
-export type TagCreateNestedOneWithoutTagsInput = {
-  create?: Prisma.XOR<Prisma.TagCreateWithoutTagsInput, Prisma.TagUncheckedCreateWithoutTagsInput>
-  connectOrCreate?: Prisma.TagCreateOrConnectWithoutTagsInput
+export type TagCreateNestedOneWithoutTaggableInput = {
+  create?: Prisma.XOR<Prisma.TagCreateWithoutTaggableInput, Prisma.TagUncheckedCreateWithoutTaggableInput>
+  connectOrCreate?: Prisma.TagCreateOrConnectWithoutTaggableInput
   connect?: Prisma.TagWhereUniqueInput
 }
 
-export type TagUpdateOneRequiredWithoutTagsNestedInput = {
-  create?: Prisma.XOR<Prisma.TagCreateWithoutTagsInput, Prisma.TagUncheckedCreateWithoutTagsInput>
-  connectOrCreate?: Prisma.TagCreateOrConnectWithoutTagsInput
-  upsert?: Prisma.TagUpsertWithoutTagsInput
+export type TagUpdateOneRequiredWithoutTaggableNestedInput = {
+  create?: Prisma.XOR<Prisma.TagCreateWithoutTaggableInput, Prisma.TagUncheckedCreateWithoutTaggableInput>
+  connectOrCreate?: Prisma.TagCreateOrConnectWithoutTaggableInput
+  upsert?: Prisma.TagUpsertWithoutTaggableInput
   connect?: Prisma.TagWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TagUpdateToOneWithWhereWithoutTagsInput, Prisma.TagUpdateWithoutTagsInput>, Prisma.TagUncheckedUpdateWithoutTagsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TagUpdateToOneWithWhereWithoutTaggableInput, Prisma.TagUpdateWithoutTaggableInput>, Prisma.TagUncheckedUpdateWithoutTaggableInput>
 }
 
-export type TagCreateWithoutTagsInput = {
+export type TagCreateWithoutTaggableInput = {
   name: string
 }
 
-export type TagUncheckedCreateWithoutTagsInput = {
+export type TagUncheckedCreateWithoutTaggableInput = {
   id?: number
   name: string
 }
 
-export type TagCreateOrConnectWithoutTagsInput = {
+export type TagCreateOrConnectWithoutTaggableInput = {
   where: Prisma.TagWhereUniqueInput
-  create: Prisma.XOR<Prisma.TagCreateWithoutTagsInput, Prisma.TagUncheckedCreateWithoutTagsInput>
+  create: Prisma.XOR<Prisma.TagCreateWithoutTaggableInput, Prisma.TagUncheckedCreateWithoutTaggableInput>
 }
 
-export type TagUpsertWithoutTagsInput = {
-  update: Prisma.XOR<Prisma.TagUpdateWithoutTagsInput, Prisma.TagUncheckedUpdateWithoutTagsInput>
-  create: Prisma.XOR<Prisma.TagCreateWithoutTagsInput, Prisma.TagUncheckedCreateWithoutTagsInput>
+export type TagUpsertWithoutTaggableInput = {
+  update: Prisma.XOR<Prisma.TagUpdateWithoutTaggableInput, Prisma.TagUncheckedUpdateWithoutTaggableInput>
+  create: Prisma.XOR<Prisma.TagCreateWithoutTaggableInput, Prisma.TagUncheckedCreateWithoutTaggableInput>
   where?: Prisma.TagWhereInput
 }
 
-export type TagUpdateToOneWithWhereWithoutTagsInput = {
+export type TagUpdateToOneWithWhereWithoutTaggableInput = {
   where?: Prisma.TagWhereInput
-  data: Prisma.XOR<Prisma.TagUpdateWithoutTagsInput, Prisma.TagUncheckedUpdateWithoutTagsInput>
+  data: Prisma.XOR<Prisma.TagUpdateWithoutTaggableInput, Prisma.TagUncheckedUpdateWithoutTaggableInput>
 }
 
-export type TagUpdateWithoutTagsInput = {
+export type TagUpdateWithoutTaggableInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
-export type TagUncheckedUpdateWithoutTagsInput = {
+export type TagUncheckedUpdateWithoutTaggableInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
 }
@@ -346,11 +346,11 @@ export type TagUncheckedUpdateWithoutTagsInput = {
  */
 
 export type TagCountOutputType = {
-  tags: number
+  Taggable: number
 }
 
 export type TagCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tags?: boolean | TagCountOutputTypeCountTagsArgs
+  Taggable?: boolean | TagCountOutputTypeCountTaggableArgs
 }
 
 /**
@@ -366,7 +366,7 @@ export type TagCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensio
 /**
  * TagCountOutputType without action
  */
-export type TagCountOutputTypeCountTagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type TagCountOutputTypeCountTaggableArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.TaggableWhereInput
 }
 
@@ -374,7 +374,7 @@ export type TagCountOutputTypeCountTagsArgs<ExtArgs extends runtime.Types.Extens
 export type TagSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
-  tags?: boolean | Prisma.Tag$tagsArgs<ExtArgs>
+  Taggable?: boolean | Prisma.Tag$TaggableArgs<ExtArgs>
   _count?: boolean | Prisma.TagCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tag"]>
 
@@ -395,7 +395,7 @@ export type TagSelectScalar = {
 
 export type TagOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name", ExtArgs["result"]["tag"]>
 export type TagInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  tags?: boolean | Prisma.Tag$tagsArgs<ExtArgs>
+  Taggable?: boolean | Prisma.Tag$TaggableArgs<ExtArgs>
   _count?: boolean | Prisma.TagCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TagIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -404,7 +404,7 @@ export type TagIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type $TagPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Tag"
   objects: {
-    tags: Prisma.$TaggablePayload<ExtArgs>[]
+    Taggable: Prisma.$TaggablePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
@@ -803,7 +803,7 @@ readonly fields: TagFieldRefs;
  */
 export interface Prisma__TagClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  tags<T extends Prisma.Tag$tagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tag$tagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaggablePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  Taggable<T extends Prisma.Tag$TaggableArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tag$TaggableArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TaggablePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1228,9 +1228,9 @@ export type TagDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.InternalA
 }
 
 /**
- * Tag.tags
+ * Tag.Taggable
  */
-export type Tag$tagsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Tag$TaggableArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Taggable
    */

@@ -46,7 +46,6 @@ export type OtpMinAggregateOutputType = {
   verifyToken: string | null
   count: number | null
   error: number | null
-  expiredAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -59,7 +58,6 @@ export type OtpMaxAggregateOutputType = {
   verifyToken: string | null
   count: number | null
   error: number | null
-  expiredAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -72,7 +70,6 @@ export type OtpCountAggregateOutputType = {
   verifyToken: number
   count: number
   error: number
-  expiredAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -99,7 +96,6 @@ export type OtpMinAggregateInputType = {
   verifyToken?: true
   count?: true
   error?: true
-  expiredAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -112,7 +108,6 @@ export type OtpMaxAggregateInputType = {
   verifyToken?: true
   count?: true
   error?: true
-  expiredAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -125,7 +120,6 @@ export type OtpCountAggregateInputType = {
   verifyToken?: true
   count?: true
   error?: true
-  expiredAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -225,7 +219,6 @@ export type OtpGroupByOutputType = {
   verifyToken: string | null
   count: number
   error: number
-  expiredAt: Date
   createdAt: Date
   updatedAt: Date
   _count: OtpCountAggregateOutputType | null
@@ -261,7 +254,6 @@ export type OtpWhereInput = {
   verifyToken?: Prisma.StringNullableFilter<"Otp"> | string | null
   count?: Prisma.IntFilter<"Otp"> | number
   error?: Prisma.IntFilter<"Otp"> | number
-  expiredAt?: Prisma.DateTimeFilter<"Otp"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"Otp"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Otp"> | Date | string
 }
@@ -274,7 +266,6 @@ export type OtpOrderByWithRelationInput = {
   verifyToken?: Prisma.SortOrderInput | Prisma.SortOrder
   count?: Prisma.SortOrder
   error?: Prisma.SortOrder
-  expiredAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -290,7 +281,6 @@ export type OtpWhereUniqueInput = Prisma.AtLeast<{
   verifyToken?: Prisma.StringNullableFilter<"Otp"> | string | null
   count?: Prisma.IntFilter<"Otp"> | number
   error?: Prisma.IntFilter<"Otp"> | number
-  expiredAt?: Prisma.DateTimeFilter<"Otp"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"Otp"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Otp"> | Date | string
 }, "id" | "phone">
@@ -303,7 +293,6 @@ export type OtpOrderByWithAggregationInput = {
   verifyToken?: Prisma.SortOrderInput | Prisma.SortOrder
   count?: Prisma.SortOrder
   error?: Prisma.SortOrder
-  expiredAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.OtpCountOrderByAggregateInput
@@ -324,7 +313,6 @@ export type OtpScalarWhereWithAggregatesInput = {
   verifyToken?: Prisma.StringNullableWithAggregatesFilter<"Otp"> | string | null
   count?: Prisma.IntWithAggregatesFilter<"Otp"> | number
   error?: Prisma.IntWithAggregatesFilter<"Otp"> | number
-  expiredAt?: Prisma.DateTimeWithAggregatesFilter<"Otp"> | Date | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Otp"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Otp"> | Date | string
 }
@@ -336,7 +324,6 @@ export type OtpCreateInput = {
   verifyToken?: string | null
   count?: number
   error?: number
-  expiredAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -349,7 +336,6 @@ export type OtpUncheckedCreateInput = {
   verifyToken?: string | null
   count?: number
   error?: number
-  expiredAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -361,7 +347,6 @@ export type OtpUpdateInput = {
   verifyToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   count?: Prisma.IntFieldUpdateOperationsInput | number
   error?: Prisma.IntFieldUpdateOperationsInput | number
-  expiredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -374,7 +359,6 @@ export type OtpUncheckedUpdateInput = {
   verifyToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   count?: Prisma.IntFieldUpdateOperationsInput | number
   error?: Prisma.IntFieldUpdateOperationsInput | number
-  expiredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -387,7 +371,6 @@ export type OtpCreateManyInput = {
   verifyToken?: string | null
   count?: number
   error?: number
-  expiredAt: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -399,7 +382,6 @@ export type OtpUpdateManyMutationInput = {
   verifyToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   count?: Prisma.IntFieldUpdateOperationsInput | number
   error?: Prisma.IntFieldUpdateOperationsInput | number
-  expiredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -412,7 +394,6 @@ export type OtpUncheckedUpdateManyInput = {
   verifyToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   count?: Prisma.IntFieldUpdateOperationsInput | number
   error?: Prisma.IntFieldUpdateOperationsInput | number
-  expiredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -425,7 +406,6 @@ export type OtpCountOrderByAggregateInput = {
   verifyToken?: Prisma.SortOrder
   count?: Prisma.SortOrder
   error?: Prisma.SortOrder
-  expiredAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -444,7 +424,6 @@ export type OtpMaxOrderByAggregateInput = {
   verifyToken?: Prisma.SortOrder
   count?: Prisma.SortOrder
   error?: Prisma.SortOrder
-  expiredAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -457,7 +436,6 @@ export type OtpMinOrderByAggregateInput = {
   verifyToken?: Prisma.SortOrder
   count?: Prisma.SortOrder
   error?: Prisma.SortOrder
-  expiredAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -482,7 +460,6 @@ export type OtpSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   verifyToken?: boolean
   count?: boolean
   error?: boolean
-  expiredAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["otp"]>
@@ -495,7 +472,6 @@ export type OtpSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extension
   verifyToken?: boolean
   count?: boolean
   error?: boolean
-  expiredAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["otp"]>
@@ -508,7 +484,6 @@ export type OtpSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extension
   verifyToken?: boolean
   count?: boolean
   error?: boolean
-  expiredAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["otp"]>
@@ -521,12 +496,11 @@ export type OtpSelectScalar = {
   verifyToken?: boolean
   count?: boolean
   error?: boolean
-  expiredAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OtpOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "otp" | "rememberToken" | "verifyToken" | "count" | "error" | "expiredAt" | "createdAt" | "updatedAt", ExtArgs["result"]["otp"]>
+export type OtpOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "otp" | "rememberToken" | "verifyToken" | "count" | "error" | "createdAt" | "updatedAt", ExtArgs["result"]["otp"]>
 
 export type $OtpPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Otp"
@@ -539,7 +513,6 @@ export type $OtpPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     verifyToken: string | null
     count: number
     error: number
-    expiredAt: Date
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["otp"]>
@@ -972,7 +945,6 @@ export interface OtpFieldRefs {
   readonly verifyToken: Prisma.FieldRef<"Otp", 'String'>
   readonly count: Prisma.FieldRef<"Otp", 'Int'>
   readonly error: Prisma.FieldRef<"Otp", 'Int'>
-  readonly expiredAt: Prisma.FieldRef<"Otp", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Otp", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Otp", 'DateTime'>
 }

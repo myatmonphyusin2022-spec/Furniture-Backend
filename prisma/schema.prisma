@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated"
+  provider = "prisma-client" // Prisma 7 is Rust-free, so it is written in Typescript 
 }
 
 datasource db {
   provider = "postgresql"
+  // url      = env("DATABASE_URL") // Prisma 7 does not contain url here
 }
 
 model Category {
@@ -28,13 +28,13 @@ model Order {
 model Otp {
   id            Int      @id @default(autoincrement())
   phone         String   @unique @db.VarChar(15)
-  otp           String   @db.VarChar(6)
+  otp           String
   rememberToken String
   verifyToken   String?
   count         Int      @default(0) @db.SmallInt
-  error         Int      @default(0) @db.SmallInt
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  error         Int      @default(0) @db.SmallInt
 }
 
 model Post {
@@ -97,19 +97,19 @@ model ProductTag {
   products Product[]
 }
 
-model Tag {
-  id   Int        @id @default(autoincrement())
-  name String     @db.VarChar(52)
-  tags Taggable[]
-}
+// model Tag {
+//   id   Int        @id @default(autoincrement())
+//   name String     @db.VarChar(52)
+//   tags Taggable[]
+// }
 
-model Taggable {
-  id     Int    @id @default(autoincrement())
-  tagId  Int
-  type   String @db.VarChar(7)
-  typeId Int
-  tag    Tag    @relation(fields: [tagId], references: [id])
-}
+// model Taggable {
+//   id     Int    @id @default(autoincrement())
+//   tagId  Int
+//   type   String @db.VarChar(7)
+//   typeId Int
+//   tag    Tag    @relation(fields: [tagId], references: [id])
+// }
 
 model Type {
   id       Int       @id @default(autoincrement())
