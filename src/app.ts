@@ -29,6 +29,8 @@ app
   .use(compression())
   .use(limiter);
 
+  app.use(express.static("public"));
+
 // ==============================
 // API Routes
 // ==============================
