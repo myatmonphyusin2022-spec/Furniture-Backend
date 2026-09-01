@@ -57,12 +57,11 @@ app.use(errorController.notFound);
 // Global Error Handler
 // ==============================
 app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-  const status = error.statusCode || 500;
+  const status = error.status || 500;
   const message = error.message || "Server Error";
   const errorCode = error.code || "ERROR_CODE";
 
   res.status(status).json({
-    success: false,
     message,
     error: errorCode,
   });
