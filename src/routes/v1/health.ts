@@ -1,6 +1,7 @@
 import express from "express";
-import { check } from "../middlewares/check";
-import { healthCheck } from "../controllers/healthController";
+
+import { check } from "../../middlewares/check";
+import { healthCheck } from "../../controllers/healthController";
 
 const router = express.Router();
 

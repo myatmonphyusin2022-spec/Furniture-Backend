@@ -6,7 +6,8 @@ import morgan from "morgan";
 
 import * as errorController from "./controllers/web/errorController";
 import viewRoutes from "./routes/web/view";
-import healthRoutes from "./routes/health";
+import healthRoutes from "./routes/v1/health";
+import authRoutes from "./routes/v1/auth";
 import { limiter } from "./middlewares/rateLimiter";
 
 export const app = express();
@@ -29,12 +30,14 @@ app
   .use(compression())
   .use(limiter);
 
-  app.use(express.static("public"));
+app.use(express.static("public"));
 
 // ==============================
 // API Routes
 // ==============================
 app.use("/api/v1", healthRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use(viewRoutes);
 
 // ==============================
 // Home Route
