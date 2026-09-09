@@ -10,10 +10,10 @@ export const register = [
     .withMessage("Phone number must be between 10 and 15 digits"),
 
   async (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
+    const errors = validationResult(req).array({ onlyFirstError: true });
 
-    if (!errors.isEmpty()) {
-      const error: any = new Error(errors.array()[0].msg);
+    if (errors.length > 0) {
+      const error: any = new Error(errors[0].msg);
 
       error.status = 400;
       error.code = "Error Invalid";
