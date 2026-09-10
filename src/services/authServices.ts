@@ -1,9 +1,15 @@
 import { PrismaClient } from "../generated/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import "dotenv/config";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
+// 1. PostgreSQL Connection Pool ဖန်တီးပါ
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 });
+
+// 2. Adapter ထဲသို့ pool ကို ထည့်ပေးပါ
+const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({
   adapter,

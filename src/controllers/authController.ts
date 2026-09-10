@@ -16,8 +16,9 @@ export const register = [
     .trim()
     .notEmpty()
     .matches("^[0-9]+$")
-    .isLength({ min: 10, max: 15 })
-    .withMessage("Phone number must be between 10 and 15 digits"),
+    // ရှေ့ဆုံး '0' ဖြုတ်လိုက်ပါက 9 လုံး ရှိနိုင်သဖြင့် min ကို 9 သို့ ပြောင်းထားပါသည်
+    .isLength({ min: 9, max: 15 })
+    .withMessage("Phone number must be between 9 and 15 digits"),
 
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -32,14 +33,14 @@ export const register = [
         return next(error);
       }
 
-      const phone = req.body.phone;
+      const phone = req.body.phone.trim().replace(/^(09|9)/, "");
 
       const user = await getUserByPhone(phone);
 
       checkUserExists(user);
 
       res.status(200).json({
-        message: phone,
+        message: phone, // Postman တွင် 448024137 ပေါ်လာမည်ဖြစ်သည်
       });
     } catch (error) {
       next(error);
