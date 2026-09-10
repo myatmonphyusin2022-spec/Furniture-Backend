@@ -1,5 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
+import { getUserByPhone } from "../services/authServices";
+
+const checkUserExists = (user: any) => {
+  if (user) {
+    const error: any = new Error("Phone number already exists");
+    error.status = 409;
+    error.code = "Error_already_exists";
+    throw error;
+  }
+};
 
 export const register = [
   body("phone", "Invalid phone number")
@@ -10,20 +20,30 @@ export const register = [
     .withMessage("Phone number must be between 10 and 15 digits"),
 
   async (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req).array({ onlyFirstError: true });
+    try {
+      const errors = validationResult(req).array({
+        onlyFirstError: true,
+      });
 
-    if (errors.length > 0) {
-      const error: any = new Error(errors[0].msg);
+      if (errors.length > 0) {
+        const error: any = new Error(errors[0].msg);
+        error.status = 400;
+        error.code = "Error_Invalid";
+        return next(error);
+      }
 
-      error.status = 400;
-      error.code = "Error Invalid";
+      const phone = req.body.phone;
 
-      return next(error);
+      const user = await getUserByPhone(phone);
+
+      checkUserExists(user);
+
+      res.status(200).json({
+        message: phone,
+      });
+    } catch (error) {
+      next(error);
     }
-
-    res.status(200).json({
-      message: "Register successful",
-    });
   },
 ];
 

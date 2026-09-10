@@ -42,7 +42,7 @@ const prisma = new PrismaClient({
 
 function createRandomUser() {
   return {
-  phone: faker.phone.number(),
+    phone: faker.phone.number(),
     password: "",
     randToken: faker.internet.jwt(),
   };
@@ -60,7 +60,12 @@ async function main() {
   for (const u of userData) {
     u.password = password;
     await prisma.user.create({
-      data: u,
+      data: {
+        phone: u.phone,
+        password: u.password,
+        randToken: u.randToken,
+        updatedAt: new Date(),
+      },
     });
   }
   console.log(`Seeding finished.`);
