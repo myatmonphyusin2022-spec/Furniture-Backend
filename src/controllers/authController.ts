@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
 import { getUserByPhone, createOtp } from "../services/authServices";
 import { generateOTP, generateToken } from "../utils/generate";
+import bcrypt from "bcrypt";
 
 interface AppError extends Error {
   status?: number;
@@ -49,11 +50,13 @@ export const register = [
       checkUserExists(user);
 
       const otp = generateOTP();
+      const salt = await bcrypt.genSalt(10);
+      const hashedOtp = await bcrypt.hash(otp.toString(), salt);
       const Token = generateToken();
 
       const otpData = {
         phone,
-        otp: String(otp), // 🟢 Schema mrr string yy htr
+        otp: hashedOtp, 
         rememberToken: Token,
         count: 1,
       };

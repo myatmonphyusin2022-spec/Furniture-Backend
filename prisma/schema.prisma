@@ -27,10 +27,10 @@ model Order {
 
 model Otp {
   id            Int      @id @default(autoincrement())
-  phone         String   @unique @db.VarChar(15)
+  phone         String   @unique @db.VarChar(20) // 🟢 ဖုန်းနံပါတ်အတွက် ရာခိုင်နှုန်းစိတ်ချရအောင် 20 သို့ တိုးထားပါ
   otp           String
-  rememberToken String
-  verifyToken   String?
+  rememberToken String   @db.Text // 🟢 Token အရှည်ကြီးတွေ ဝင်နိုင်အောင် Text ပြောင်းပါ
+  verifyToken   String?  @db.Text // 🟢 Text သို့ ပြောင်းပါ
   count         Int      @default(0) @db.SmallInt
   error         Int      @default(0) @db.SmallInt
   createdAt     DateTime @default(now())
