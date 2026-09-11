@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
-import { getUserByPhone } from "../services/authServices";
-import { generateOTP } from "../utils/generate";
+import { getUserByPhone, createOtp } from "../services/authServices";
+import { generateOTP, generateToken } from "../utils/generate";
 
 interface AppError extends Error {
   status?: number;
@@ -49,11 +49,23 @@ export const register = [
       checkUserExists(user);
 
       const otp = generateOTP();
+      const Token = generateToken();
+
+      const otpData = {
+        phone,
+        otp: String(otp), // 🟢 Schema mrr string yy htr
+        rememberToken: Token,
+        count: 1,
+      };
+
+      const result = await createOtp(otpData);
 
       res.status(200).json({
         success: true,
-        phone: phone,
-        otp: otp,
+        phone: result.phone,
+        otp: result.otp,
+        token: result.rememberToken,
+        message: `We are sending OTP to 09${result.phone}`,
       });
     } catch (error) {
       next(error);

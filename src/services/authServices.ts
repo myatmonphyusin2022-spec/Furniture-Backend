@@ -22,3 +22,10 @@ export const getUserByPhone = async (phone: string) => {
     },
   });
 };
+
+
+export const createOtp = async (otpData: any) => {
+  return await prisma.otp.create({
+    data: otpData,
+  });
+};
