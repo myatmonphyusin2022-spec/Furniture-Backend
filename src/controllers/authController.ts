@@ -1,10 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import { body, validationResult } from "express-validator";
 import { getUserByPhone } from "../services/authServices";
+import { generateOTP } from "../utils/generate";
+
+interface AppError extends Error {
+  status?: number;
+  code?: string;
+}
 
 const checkUserExists = (user: any) => {
   if (user) {
-    const error: any = new Error("Phone number already exists");
+    const error: AppError = new Error("Phone number already exists");
     error.status = 409;
     error.code = "Error_already_exists";
     throw error;
@@ -12,35 +18,42 @@ const checkUserExists = (user: any) => {
 };
 
 export const register = [
-  body("phone", "Invalid phone number")
+  // Validation Rules
+  body("phone")
     .trim()
     .notEmpty()
-    .matches("^[0-9]+$")
-    // ရှေ့ဆုံး '0' ဖြုတ်လိုက်ပါက 9 လုံး ရှိနိုင်သဖြင့် min ကို 9 သို့ ပြောင်းထားပါသည်
+    .withMessage("Phone number is required")
+    .matches(/^[0-9]+$/)
+    .withMessage("Phone number must contain only numbers")
     .isLength({ min: 9, max: 15 })
     .withMessage("Phone number must be between 9 and 15 digits"),
 
+  // Request Handler
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const errors = validationResult(req).array({
-        onlyFirstError: true,
-      });
+      const errors = validationResult(req);
 
-      if (errors.length > 0) {
-        const error: any = new Error(errors[0].msg);
+      if (!errors.isEmpty()) {
+        const firstError = errors.array()[0];
+        const error: AppError = new Error(firstError.msg);
         error.status = 400;
         error.code = "Error_Invalid";
         return next(error);
       }
 
-      const phone = req.body.phone.trim().replace(/^(09|9)/, "");
+      // Safe access for phone input
+      const rawPhone = req.body.phone ? String(req.body.phone).trim() : "";
+      const phone = rawPhone.replace(/^(09|9)/, "");
 
       const user = await getUserByPhone(phone);
-
       checkUserExists(user);
 
+      const otp = generateOTP();
+
       res.status(200).json({
-        message: phone, // Postman တွင် 448024137 ပေါ်လာမည်ဖြစ်သည်
+        success: true,
+        phone: phone,
+        otp: otp,
       });
     } catch (error) {
       next(error);
@@ -53,9 +66,7 @@ export const verifyOtp = async (
   res: Response,
   next: NextFunction,
 ) => {
-  res.status(200).json({
-    message: "Verify OTP route",
-  });
+  res.status(200).json({ message: "Verify OTP route" });
 };
 
 export const confirmPassword = async (
@@ -63,9 +74,7 @@ export const confirmPassword = async (
   res: Response,
   next: NextFunction,
 ) => {
-  res.status(200).json({
-    message: "Confirm Password route",
-  });
+  res.status(200).json({ message: "Confirm Password route" });
 };
 
 export const login = async (
@@ -73,7 +82,5 @@ export const login = async (
   res: Response,
   next: NextFunction,
 ) => {
-  res.status(200).json({
-    message: "Login route",
-  });
+  res.status(200).json({ message: "Login route" });
 };
