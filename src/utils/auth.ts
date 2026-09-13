@@ -6,6 +6,7 @@ export const checkUserExists = (user: any) => {
     throw error;
   }
 };
+
 export const checkOtpErrorIfSameDate = (
   isSameDate: boolean,
   errorCount: number,
@@ -16,6 +17,15 @@ export const checkOtpErrorIfSameDate = (
     );
     error.status = 401;
     error.code = "Error_OverLimit";
+    throw error;
+  }
+};
+
+export const checkOtpRowExists = (otpRow: any) => {
+  if (!otpRow) {
+    const error: any = new Error("Phone number is incorrect");
+    error.status = 404;
+    error.code = "Error_NotFound";
     throw error;
   }
 };

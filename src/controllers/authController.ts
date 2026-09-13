@@ -8,7 +8,7 @@ import {
 } from "../services/authServices";
 import { generateOTP, generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
-import { checkOtpErrorIfSameDate } from "../utils/auth";
+import { checkOtpErrorIfSameDate, checkOtpRowExists } from "../utils/auth";
 
 interface AppError extends Error {
   status?: number;
@@ -56,7 +56,6 @@ export const register = [
 
       const otp = 123456; // For testing purposes, replace with generateOTP() in production
 
-      // const otp = generateOTP();
       const salt = await bcrypt.genSalt(10);
       const hashedOtp = await bcrypt.hash(otp.toString(), salt);
       const Token = generateToken();
@@ -123,32 +122,81 @@ export const register = [
 ];
 
 export const verifyOtp = [
-body("phone")
+  body("phone")
     .trim()
     .notEmpty()
+    .withMessage("Phone number is required")
     .matches(/^[0-9]+$/)
     .withMessage("Phone number must contain only numbers")
-    .isLength({ min: 6, max: 6})
-    .withMessage("Phone number must be 6 characters long"),
-  body("otp","Invalid OTP")
+    .isLength({ min: 9, max: 15 })
+    .withMessage("Phone number must be between 9 and 15 digits"),
+
+  body("otp")
     .trim()
     .notEmpty()
-    .matches(/^[0-9]+$/) 
-    .withMessage("OTP is required"),
-  body("token","Invalid token")
-    .trim()
-    .notEmpty()
-    .escape(),async (req: Request, res: Response, next: NextFunction) => {
-      const errors = validationResult(req).array({onlyFirstError: true});
+    .withMessage("OTP is required")
+    .matches(/^[0-9]+$/)
+    .withMessage("OTP must contain only numbers")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("OTP must be 6 digits long"),
+
+  body("token", "Invalid token").trim().notEmpty().escape(),
+
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req).array({ onlyFirstError: true });
       if (errors.length > 0) {
         const firstError = errors[0];
         const error: AppError = new Error(firstError.msg);
         error.status = 400;
         return next(error);
       }
-      res.status(200).json({ message: "Verify OTP route" });
+
+      const rawPhone = req.body.phone ? String(req.body.phone).trim() : "";
+      const phone = rawPhone.replace(/^(09|9)/, "");
+      const { otp, token } = req.body;
+
+      const user = await getUserByPhone(phone);
+      checkUserExists(user);
+
+      const existingOtp = await getOtpByPhone(phone);
+      checkOtpRowExists(existingOtp);
+
+      const lastOtpVerify = new Date(existingOtp!.updatedAt).toDateString();
+      const today = new Date().toDateString();
+      const isSameDate = lastOtpVerify === today;
+      checkOtpErrorIfSameDate(isSameDate, existingOtp!.error);
+
+      // Check Token
+      if (existingOtp!.rememberToken !== token) {
+        await updateOtp(existingOtp!.phone, {
+          error: { increment: 1 },
+        });
+        const error: AppError = new Error("Invalid token");
+        error.status = 400;
+        return next(error);
+      }
+
+      // Check OTP using bcrypt.compare
+      const isOtpValid = await bcrypt.compare(otp, existingOtp!.otp);
+      if (!isOtpValid) {
+        await updateOtp(existingOtp!.phone, {
+          error: { increment: 1 },
+        });
+        const error: AppError = new Error("Invalid OTP");
+        error.status = 400;
+        return next(error);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Verify OTP success",
+      });
+    } catch (error) {
+      next(error);
     }
-  ];
+  },
+];
 
 export const confirmPassword = async (
   req: Request,
