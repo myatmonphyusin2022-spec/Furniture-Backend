@@ -54,7 +54,9 @@ export const register = [
       const user = await getUserByPhone(phone);
       checkUserExists(user);
 
-      const otp = generateOTP();
+      const otp = 123456; // For testing purposes, replace with generateOTP() in production
+
+      // const otp = generateOTP();
       const salt = await bcrypt.genSalt(10);
       const hashedOtp = await bcrypt.hash(otp.toString(), salt);
       const Token = generateToken();
@@ -120,13 +122,33 @@ export const register = [
   },
 ];
 
-export const verifyOtp = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  res.status(200).json({ message: "Verify OTP route" });
-};
+export const verifyOtp = [
+body("phone")
+    .trim()
+    .notEmpty()
+    .matches(/^[0-9]+$/)
+    .withMessage("Phone number must contain only numbers")
+    .isLength({ min: 6, max: 6})
+    .withMessage("Phone number must be 6 characters long"),
+  body("otp","Invalid OTP")
+    .trim()
+    .notEmpty()
+    .matches(/^[0-9]+$/) 
+    .withMessage("OTP is required"),
+  body("token","Invalid token")
+    .trim()
+    .notEmpty()
+    .escape(),async (req: Request, res: Response, next: NextFunction) => {
+      const errors = validationResult(req).array({onlyFirstError: true});
+      if (errors.length > 0) {
+        const firstError = errors[0];
+        const error: AppError = new Error(firstError.msg);
+        error.status = 400;
+        return next(error);
+      }
+      res.status(200).json({ message: "Verify OTP route" });
+    }
+  ];
 
 export const confirmPassword = async (
   req: Request,
