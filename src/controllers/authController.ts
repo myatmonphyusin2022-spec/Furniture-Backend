@@ -5,7 +5,7 @@ import {
   createOtp,
   getOtpByPhone,
   updateOtp,
-} from "../services/authServices";
+} from "../services/authService";
 import { generateOTP, generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
 import moment from "moment";
@@ -220,13 +220,31 @@ export const verifyOtp = [
   },
 ];
 
-export const confirmPassword = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  res.status(200).json({ message: "Confirm Password route" });
-};
+//Sending OTP --> Verify OTP --> Confirm Password --> New Account
+export const confirmPassword = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .matches(/^[0-9]+$/)
+    .isLength({ min: 5, max: 12 }),
+  body("password", "Password must be 8 digits.")
+    .trim()
+    .notEmpty()
+    .matches(/^[0-9]+$/)
+    .isLength({ min: 8, max: 8 }),
+  body("token", "Invalid token").trim().notEmpty().escape(),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
+     const error: AppError = new Error(errors[0].msg);
+      error.status = 400;
+      error.code = "Error_Invalid";
+      return next(error);
+    }
+    const { phone, password, token } = req.body;
+    res.status(200).json({ message: "Confirm Password route" });
+  },
+];
 
 export const login = async (
   req: Request,
