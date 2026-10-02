@@ -8,7 +8,7 @@ import {
   updateOtp,
   updateUser,
 } from "../services/authService";
-import { generateOTP, generateToken } from "../utils/generate";
+import { generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
 import moment from "moment";
 import { checkOtpErrorIfSameDate, checkOtpRowExists } from "../utils/auth";
@@ -17,9 +17,7 @@ interface AppError extends Error {
   status?: number;
   code?: string;
 }
-
 const jwt = require("jsonwebtoken");
-
 const checkUserExists = (user: any) => {
   if (user) {
     const error: AppError = new Error("Phone number already exists");
@@ -42,7 +40,7 @@ export const register = [
     .isLength({ min: 9, max: 15 })
     .withMessage("Phone number must be between 9 and 15 digits"),
 
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -135,7 +133,7 @@ export const verifyOtp = [
     .isLength({ min: 6, max: 6 }),
   body("token", "Invalid token").trim().notEmpty(),
 
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const errors = validationResult(req).array({ onlyFirstError: true });
       if (errors.length > 0) {
@@ -167,8 +165,9 @@ export const verifyOtp = [
         return next(error);
       }
 
-      // Check 2-min expiry
-      const isExpired = moment().diff(existingOtp?.updatedAt, "minutes") > 2;
+      // Check 2-min expiry safely using moment
+      const isExpired =
+        moment().diff(moment(existingOtp?.updatedAt), "minutes") > 2;
       if (isExpired) {
         const error: AppError = new Error("OTP has expired");
         error.status = 400;
@@ -226,7 +225,7 @@ export const confirmPassword = [
     .isLength({ min: 8, max: 8 }),
   body("token", "Invalid token").trim().notEmpty().escape(),
 
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const errors = validationResult(req).array({ onlyFirstError: true });
       if (errors.length > 0) {
@@ -263,8 +262,9 @@ export const confirmPassword = [
         return next(error);
       }
 
-      // Check 10-min expiry window
-      const isExpired = moment().diff(existingOtp?.updatedAt, "minutes") > 10;
+      // Check 10-min expiry window safely using moment
+      const isExpired =
+        moment().diff(moment(existingOtp?.updatedAt), "minutes") > 10;
       if (isExpired) {
         const error: AppError = new Error(
           "Your account has been expired, pls try again.",
@@ -280,7 +280,7 @@ export const confirmPassword = [
       const newUser = await createUser({
         phone,
         password: hashPassword,
-        randomToken: "I will replace Refresh Token soon",
+        randToken: "I will replace Refresh Token soon", // ✅ Fixed: matches Prisma schema
       });
 
       // Generate JWT Access & Refresh tokens
@@ -295,14 +295,27 @@ export const confirmPassword = [
         { expiresIn: "30d" }, // 30 days
       );
 
-      await updateUser(newUser.phone, { randomToken: refreshToken });
+      await updateUser(newUser.phone, { randToken: refreshToken }); // ✅ Fixed
 
-      res.status(200).json({
+      // Fixed sameSite invalid value ("string" -> "lax")
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 15 * 60 * 1000,
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
+      res.status(201).json({
         success: true,
         message: "Account created successfully",
         userId: newUser.id,
-        accessToken,
-        refreshToken,
       });
     } catch (error) {
       next(error);
