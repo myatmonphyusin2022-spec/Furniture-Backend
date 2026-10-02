@@ -3,8 +3,10 @@ import { body, validationResult } from "express-validator";
 import {
   getUserByPhone,
   createOtp,
+  createUser,
   getOtpByPhone,
   updateOtp,
+  updateUser,
 } from "../services/authService";
 import { generateOTP, generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
@@ -16,6 +18,8 @@ interface AppError extends Error {
   code?: string;
 }
 
+const jwt = require("jsonwebtoken");
+
 const checkUserExists = (user: any) => {
   if (user) {
     const error: AppError = new Error("Phone number already exists");
@@ -26,7 +30,7 @@ const checkUserExists = (user: any) => {
 };
 
 // ==========================================
-// 1. REGISTER CONTROLLER (OTP တောင်းဆိုခြင်း)
+// 1. REGISTER CONTROLLER
 // ==========================================
 export const register = [
   body("phone")
@@ -55,7 +59,7 @@ export const register = [
       const user = await getUserByPhone(phone);
       checkUserExists(user);
 
-      const otp = 123456; // Testing အတွက်
+      const otp = 123456; // Test OTP
       const salt = await bcrypt.genSalt(10);
       const hashedOtp = await bcrypt.hash(otp.toString(), salt);
       const Token = generateToken();
@@ -64,14 +68,13 @@ export const register = [
       let result;
 
       if (!existingOtp) {
-        const otpData = {
+        result = await createOtp({
           phone,
           otp: hashedOtp,
           rememberToken: Token,
           count: 1,
           error: 0,
-        };
-        result = await createOtp(otpData);
+        });
       } else {
         const lastOtpRequest = new Date(existingOtp.updatedAt).toDateString();
         const today = new Date().toDateString();
@@ -87,28 +90,26 @@ export const register = [
             return next(error);
           }
 
-          const otpData = {
+          result = await updateOtp(existingOtp.phone, {
             otp: hashedOtp,
             rememberToken: Token,
             count: { increment: 1 },
             error: 0,
-          };
-          result = await updateOtp(existingOtp.phone, otpData);
+          });
         } else {
-          const otpData = {
+          result = await updateOtp(existingOtp.phone, {
             otp: hashedOtp,
             rememberToken: Token,
             count: 1,
             error: 0,
-          };
-          result = await updateOtp(existingOtp.phone, otpData);
+          });
         }
       }
 
       res.status(200).json({
         success: true,
         phone: result.phone,
-        otp: otp, // Testing အတွက် ပို့ပေးခြင်း
+        otp: otp,
         token: result.rememberToken,
         message: `We are sending OTP to ${rawPhone}`,
       });
@@ -119,35 +120,26 @@ export const register = [
 ];
 
 // ==========================================
-// 2. VERIFY OTP CONTROLLER (OTP စစ်ဆေးခြင်း)
+// 2. VERIFY OTP CONTROLLER
 // ==========================================
 export const verifyOtp = [
   body("phone")
     .trim()
     .notEmpty()
-    .withMessage("Phone number is required")
     .matches(/^[0-9]+$/)
-    .withMessage("Phone number must contain only numbers")
-    .isLength({ min: 9, max: 15 })
-    .withMessage("Phone number must be between 9 and 15 digits"),
-
+    .isLength({ min: 9, max: 15 }),
   body("otp")
     .trim()
     .notEmpty()
-    .withMessage("OTP is required")
     .matches(/^[0-9]+$/)
-    .withMessage("OTP must contain only numbers")
-    .isLength({ min: 6, max: 6 })
-    .withMessage("OTP must be 6 digits long"),
-
+    .isLength({ min: 6, max: 6 }),
   body("token", "Invalid token").trim().notEmpty(),
 
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const errors = validationResult(req).array({ onlyFirstError: true });
       if (errors.length > 0) {
-        const firstError = errors[0];
-        const error: AppError = new Error(firstError.msg);
+        const error: AppError = new Error(errors[0].msg);
         error.status = 400;
         return next(error);
       }
@@ -167,7 +159,7 @@ export const verifyOtp = [
       const isSameDate = lastOtpVerify === today;
       checkOtpErrorIfSameDate(isSameDate, existingOtp!.error);
 
-      // Token စစ်ဆေးခြင်း
+      // Verify token match
       if (existingOtp!.rememberToken !== token) {
         await updateOtp(existingOtp!.phone, { error: { increment: 1 } });
         const error: AppError = new Error("Invalid token");
@@ -175,7 +167,7 @@ export const verifyOtp = [
         return next(error);
       }
 
-      // သက်တမ်းကုန်ဆုံးမှု စစ်ဆေးခြင်း (၂ မိနစ်)
+      // Check 2-min expiry
       const isExpired = moment().diff(existingOtp?.updatedAt, "minutes") > 2;
       if (isExpired) {
         const error: AppError = new Error("OTP has expired");
@@ -184,7 +176,7 @@ export const verifyOtp = [
         return next(error);
       }
 
-      // OTP မှန်မမှန် စစ်ဆေးခြင်း
+      // Check OTP validity
       const isOtpValid = await bcrypt.compare(otp, existingOtp!.otp);
       if (!isOtpValid) {
         const errorData = isSameDate
@@ -198,20 +190,18 @@ export const verifyOtp = [
         return next(error);
       }
 
-      // အောင်မြင်ပါက Token အသစ်ထုတ်ပေးပြီး Save မည်
+      // Generate new token for password step
       const verifyToken = generateToken();
-      const otpData = {
+      const result = await updateOtp(existingOtp!.phone, {
         rememberToken: verifyToken,
         error: 0,
         count: 1,
-      };
-
-      const result = await updateOtp(existingOtp!.phone, otpData);
+      });
 
       res.status(200).json({
         success: true,
         phone: result.phone,
-        token: result.rememberToken, // ပြင်ဆင်ပြီး (result.verifyToken အစား)
+        token: result.rememberToken,
         message: "Verify OTP success",
       });
     } catch (error) {
@@ -220,36 +210,102 @@ export const verifyOtp = [
   },
 ];
 
-//Sending OTP --> Verify OTP --> Confirm Password --> New Account
+// ==========================================
+// 3. CONFIRM PASSWORD CONTROLLER
+// ==========================================
 export const confirmPassword = [
   body("phone", "Invalid phone number")
     .trim()
     .notEmpty()
     .matches(/^[0-9]+$/)
-    .isLength({ min: 5, max: 12 }),
+    .isLength({ min: 9, max: 15 }),
   body("password", "Password must be 8 digits.")
     .trim()
     .notEmpty()
     .matches(/^[0-9]+$/)
     .isLength({ min: 8, max: 8 }),
   body("token", "Invalid token").trim().notEmpty().escape(),
+
   async (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req).array({ onlyFirstError: true });
-    if (errors.length > 0) {
-     const error: AppError = new Error(errors[0].msg);
-      error.status = 400;
-      error.code = "Error_Invalid";
-      return next(error);
+    try {
+      const errors = validationResult(req).array({ onlyFirstError: true });
+      if (errors.length > 0) {
+        const error: AppError = new Error(errors[0].msg);
+        error.status = 400;
+        error.code = "Error_Invalid";
+        return next(error);
+      }
+
+      const rawPhone = req.body.phone ? String(req.body.phone).trim() : "";
+      const phone = rawPhone.replace(/^(09|9)/, "");
+      const { password, token } = req.body;
+
+      const user = await getUserByPhone(phone);
+      checkUserExists(user);
+
+      const existingOtp = await getOtpByPhone(phone);
+      checkOtpRowExists(existingOtp);
+
+      // Security check for attack attempt
+      if (existingOtp?.error === 5) {
+        const error: AppError = new Error("This request may be an attack.");
+        error.status = 400;
+        error.code = "Error_Bad_Request";
+        return next(error);
+      }
+
+      // Verify token match
+      if (existingOtp?.rememberToken !== token) {
+        await updateOtp(existingOtp!.phone, { error: 5 });
+        const error: AppError = new Error("Invalid token");
+        error.status = 400;
+        error.code = "Error_Invalid_Token";
+        return next(error);
+      }
+
+      // Check 10-min expiry window
+      const isExpired = moment().diff(existingOtp?.updatedAt, "minutes") > 10;
+      if (isExpired) {
+        const error: AppError = new Error(
+          "Your account has been expired, pls try again.",
+        );
+        error.status = 403;
+        error.code = "Error_Expired";
+        return next(error);
+      }
+
+      // Hash password and create user
+      const salt = await bcrypt.genSalt(10);
+      const hashPassword = await bcrypt.hash(password, salt);
+      const newUser = await createUser({
+        phone,
+        password: hashPassword,
+        randomToken: "I will replace Refresh Token soon",
+      });
+
+      // Generate JWT Access & Refresh tokens
+      const accessToken = jwt.sign(
+        { id: newUser.id },
+        process.env.ACCESS_TOKEN_SECRET!,
+        { expiresIn: 60 * 15 }, // 15 mins
+      );
+      const refreshToken = jwt.sign(
+        { id: newUser.id, phone: newUser.phone },
+        process.env.REFRESH_TOKEN_SECRET!,
+        { expiresIn: "30d" }, // 30 days
+      );
+
+      await updateUser(newUser.phone, { randomToken: refreshToken });
+
+      res.status(200).json({
+        success: true,
+        message: "Account created successfully",
+        userId: newUser.id,
+        accessToken,
+        refreshToken,
+      });
+    } catch (error) {
+      next(error);
     }
-    const { phone, password, token } = req.body;
-    res.status(200).json({ message: "Confirm Password route" });
   },
 ];
-
-export const login = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  res.status(200).json({ message: "Login route" });
-};

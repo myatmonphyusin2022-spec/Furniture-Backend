@@ -71,3 +71,18 @@ export const updateOtp = async (phone: string, otpData: any) => {
     data: otpData, // Update လုပ်မည့် အချက်အလက်များကို ထည့်သွင်းခြင်း
   });
 };
+
+export const createUser = async (userData: any) => {
+  return await prisma.user.create({
+    data: userData, // User Record အသစ်ဆောက်ခြင်း
+  });
+};
+
+export const updateUser = async (phone: string, userData: any) => {
+  return await prisma.user.update({
+    where: {
+      phone: phone, // schema.prisma တွင် phone ၌ @unique ပါဝင်ရန် လိုအပ်သည်
+    },
+    data: userData, // Update လုပ်မည့် အချက်အလက်များကို ထည့်သွင်းခြင်း
+  });
+};
