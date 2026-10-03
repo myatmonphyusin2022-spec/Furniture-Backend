@@ -289,27 +289,27 @@ export const confirmPassword = [
       });
 
       // Generate JWT Access & Refresh tokens
-      const accessToken = jwt.sign(
+      const accessTokenPayload = jwt.sign(
         { id: newUser.id },
         process.env.ACCESS_TOKEN_SECRET!,
         { expiresIn: 60 * 15 },
       );
-      const refreshToken = jwt.sign(
+      const refreshTokenPayload = jwt.sign(
         { id: newUser.id, phone: newUser.phone },
         process.env.REFRESH_TOKEN_SECRET!,
         { expiresIn: "30d" },
       );
 
-      await updateUser(newUser.phone, { randToken: refreshToken });
+      await updateUser(newUser.phone, { randToken: refreshTokenPayload });
 
-      res.cookie("accessToken", accessToken, {
+      res.cookie("accessToken", accessTokenPayload, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 15 * 60 * 1000,
       });
 
-      res.cookie("refreshToken", refreshToken, {
+      res.cookie("refreshToken", refreshTokenPayload, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -353,7 +353,12 @@ export const login = [
         return next(error);
       }
 
-      const { phone, password } = req.body;
+      const password = req.body.password;
+      let phone = req.body.phone;
+      if (phone.slices(0, 2) === "09" || phone.slices(0, 1) === "9") {
+        phone = phone.substring(2, phone.length);
+      }
+      
       const user = await getUserByPhone(phone);
       checkUserIfNotExist(user);
 
@@ -394,10 +399,43 @@ export const login = [
         return next(error);
       }
 
-      // 4. Success Response
+      // 4. Generate Authorization Tokens on Success
+      const accessTokenPayload = jwt.sign(
+        { userId: user!.id, phone: user!.phone },
+        process.env.ACCESS_TOKEN_SECRET!,
+        { expiresIn: 60 * 15 },
+      );
+
+      const refreshTokenPayload = jwt.sign(
+        { userId: user!.id, phone: user!.phone },
+        process.env.REFRESH_TOKEN_SECRET!,
+        { expiresIn: "30d" },
+      );
+
+      // Reset login failure count and save refresh token
+      await updateUser(user!.phone, {
+        errorLoginCount: 0,
+        randToken: refreshTokenPayload,
+      });
+
+      res.cookie("accessToken", accessTokenPayload, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 15 * 60 * 1000,
+      });
+
+      res.cookie("refreshToken", refreshTokenPayload, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+
       res.status(200).json({
         success: true,
         message: "Login successful",
+        userId: user!.id,
       });
     } catch (error) {
       next(error);
