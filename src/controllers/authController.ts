@@ -11,13 +11,18 @@ import {
 import { generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
 import moment from "moment";
-import { checkOtpErrorIfSameDate, checkOtpRowExists } from "../utils/auth";
+import {
+  checkOtpErrorIfSameDate,
+  checkOtpRowExists,
+  checkUserIfNotExist,
+} from "../utils/auth";
 
 interface AppError extends Error {
   status?: number;
   code?: string;
 }
 const jwt = require("jsonwebtoken");
+
 const checkUserExists = (user: any) => {
   if (user) {
     const error: AppError = new Error("Phone number already exists");
@@ -280,24 +285,23 @@ export const confirmPassword = [
       const newUser = await createUser({
         phone,
         password: hashPassword,
-        randToken: "I will replace Refresh Token soon", // ✅ Fixed: matches Prisma schema
+        randToken: "I will replace Refresh Token soon",
       });
 
       // Generate JWT Access & Refresh tokens
       const accessToken = jwt.sign(
         { id: newUser.id },
         process.env.ACCESS_TOKEN_SECRET!,
-        { expiresIn: 60 * 15 }, // 15 mins
+        { expiresIn: 60 * 15 },
       );
       const refreshToken = jwt.sign(
         { id: newUser.id, phone: newUser.phone },
         process.env.REFRESH_TOKEN_SECRET!,
-        { expiresIn: "30d" }, // 30 days
+        { expiresIn: "30d" },
       );
 
-      await updateUser(newUser.phone, { randToken: refreshToken }); // ✅ Fixed
+      await updateUser(newUser.phone, { randToken: refreshToken });
 
-      // Fixed sameSite invalid value ("string" -> "lax")
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -316,6 +320,84 @@ export const confirmPassword = [
         success: true,
         message: "Account created successfully",
         userId: newUser.id,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+// ==========================================
+// 4. LOGIN CONTROLLER
+// ==========================================
+export const login = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .matches(/^[0-9]+$/)
+    .isLength({ min: 9, max: 15 }),
+  body("password", "Password must be 8 digits.")
+    .trim()
+    .notEmpty()
+    .matches(/^[0-9]+$/)
+    .isLength({ min: 8, max: 8 }),
+
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // 1. Validation Check First
+      const errors = validationResult(req).array({ onlyFirstError: true });
+      if (errors.length > 0) {
+        const error: AppError = new Error(errors[0].msg);
+        error.status = 400;
+        error.code = "Error_Invalid";
+        return next(error);
+      }
+
+      const { phone, password } = req.body;
+      const user = await getUserByPhone(phone);
+      checkUserIfNotExist(user);
+
+      // 2. Check if account is frozen
+      if (user!.status === "FREEZE") {
+        const error: AppError = new Error(
+          "Your account is temporarily locked. Please contact us.",
+        );
+        error.status = 401;
+        error.code = "Error_Freeze";
+        return next(error);
+      }
+
+      // 3. Compare Password
+      const isMatchPassword = await bcrypt.compare(password, user!.password);
+      if (!isMatchPassword) {
+        const lastRequest = new Date(user!.updatedAt).toLocaleDateString();
+        const isSameDate = lastRequest === new Date().toLocaleDateString();
+
+        if (!isSameDate) {
+          await updateUser(user!.phone, { errorLoginCount: 1 });
+        } else {
+          if (user!.errorLoginCount >= 2) {
+            await updateUser(user!.phone, {
+              status: "FREEZE",
+              errorLoginCount: { increment: 1 },
+            });
+          } else {
+            await updateUser(user!.phone, {
+              errorLoginCount: { increment: 1 },
+            });
+          }
+        }
+
+        const error: any = new Error("Password is incorrect");
+        error.status = 401;
+        error.code = "Error_Incorrect_Password";
+        return next(error);
+      }
+
+      // 4. Success Response
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
       });
     } catch (error) {
       next(error);
