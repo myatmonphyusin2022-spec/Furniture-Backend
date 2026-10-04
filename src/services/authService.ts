@@ -86,3 +86,11 @@ export const updateUser = async (phone: string, userData: any) => {
     data: userData, // Update လုပ်မည့် အချက်အလက်များကို ထည့်သွင်းခြင်း
   });
 };
+
+export const getUserById = async (id: number) => {
+  return await prisma.user.findUnique({
+    where: {
+      id: id, // id field ကို အခြေခံ၍ Unique Record ရှာခြင်း
+    },
+  });
+};

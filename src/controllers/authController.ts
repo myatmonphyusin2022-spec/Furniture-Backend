@@ -7,6 +7,7 @@ import {
   getOtpByPhone,
   updateOtp,
   updateUser,
+  getUserById,
 } from "../services/authService";
 import { generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
@@ -16,12 +17,12 @@ import {
   checkOtpRowExists,
   checkUserIfNotExist,
 } from "../utils/auth";
+import jwt from "jsonwebtoken";
 
 interface AppError extends Error {
   status?: number;
   code?: string;
 }
-const jwt = require("jsonwebtoken");
 
 const checkUserExists = (user: any) => {
   if (user) {
@@ -290,29 +291,34 @@ export const confirmPassword = [
 
       // Generate JWT Access & Refresh tokens
       const accessTokenPayload = jwt.sign(
-        { id: newUser.id },
+        { userId: newUser.id, phone: newUser.phone },
         process.env.ACCESS_TOKEN_SECRET!,
         { expiresIn: 60 * 15 },
       );
       const refreshTokenPayload = jwt.sign(
-        { id: newUser.id, phone: newUser.phone },
+        { userId: newUser.id, phone: newUser.phone },
         process.env.REFRESH_TOKEN_SECRET!,
         { expiresIn: "30d" },
       );
 
       await updateUser(newUser.phone, { randToken: refreshTokenPayload });
 
-      res.cookie("accessToken", accessTokenPayload, {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        sameSite:
+          process.env.NODE_ENV === "production"
+            ? ("none" as const)
+            : ("lax" as const),
+      };
+
+      res.cookie("accessToken", accessTokenPayload, {
+        ...cookieOptions,
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", refreshTokenPayload, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        ...cookieOptions,
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
@@ -344,7 +350,6 @@ export const login = [
 
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // 1. Validation Check First
       const errors = validationResult(req).array({ onlyFirstError: true });
       if (errors.length > 0) {
         const error: AppError = new Error(errors[0].msg);
@@ -362,7 +367,6 @@ export const login = [
       const user = await getUserByPhone(phone);
       checkUserIfNotExist(user);
 
-      // 2. Check if account is frozen
       if (user!.status === "FREEZE") {
         const error: AppError = new Error(
           "Your account is temporarily locked. Please contact us.",
@@ -372,7 +376,6 @@ export const login = [
         return next(error);
       }
 
-      // 3. Compare Password
       const isMatchPassword = await bcrypt.compare(password, user!.password);
       if (!isMatchPassword) {
         const lastRequest = new Date(user!.updatedAt).toLocaleDateString();
@@ -399,7 +402,6 @@ export const login = [
         return next(error);
       }
 
-      // 4. Generate Authorization Tokens on Success
       const accessTokenPayload = jwt.sign(
         { userId: user!.id, phone: user!.phone },
         process.env.ACCESS_TOKEN_SECRET!,
@@ -412,23 +414,27 @@ export const login = [
         { expiresIn: "30d" },
       );
 
-      // Reset login failure count and save refresh token
       await updateUser(user!.phone, {
         errorLoginCount: 0,
         randToken: refreshTokenPayload,
       });
 
-      res.cookie("accessToken", accessTokenPayload, {
+      const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        sameSite:
+          process.env.NODE_ENV === "production"
+            ? ("none" as const)
+            : ("lax" as const),
+      };
+
+      res.cookie("accessToken", accessTokenPayload, {
+        ...cookieOptions,
         maxAge: 15 * 60 * 1000,
       });
 
       res.cookie("refreshToken", refreshTokenPayload, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        ...cookieOptions,
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
@@ -442,3 +448,70 @@ export const login = [
     }
   },
 ];
+
+// ==========================================
+// 5. LOGOUT CONTROLLER
+// ==========================================
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const refreshToken = req.cookies?.refreshToken || null;
+
+    if (!refreshToken) {
+      const err: any = new Error("You are an unauthorized user.");
+      err.status = 401;
+      err.code = "Error_Unauthenticated";
+      return next(err);
+    }
+
+    let decoded: { userId: number; phone: string };
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as {
+        userId: number;
+        phone: string;
+      };
+    } catch (err) {
+      const error: any = new Error("You are not an authenticated user.");
+      error.status = 401;
+      error.code = "Error_Unauthenticated";
+      return next(error);
+    }
+
+    const user = await getUserById(decoded.userId);
+    checkUserIfNotExist(user);
+
+    if (user!.phone !== decoded.phone) {
+      const error: any = new Error("You are not an authenticated user.");
+      error.status = 401;
+      error.code = "Error_Unauthenticated";
+      return next(error);
+    }
+
+    const userData = {
+      randToken: generateToken(),
+    };
+    await updateUser(user!.phone, userData);
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? ("none" as const)
+          : ("lax" as const),
+    };
+
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Logout successful, See you again.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
