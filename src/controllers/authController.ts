@@ -355,10 +355,10 @@ export const login = [
 
       const password = req.body.password;
       let phone = req.body.phone;
-      if (phone.slices(0, 2) === "09" || phone.slices(0, 1) === "9") {
+      if (phone.slice(0, 2) === "09" || phone.slice(0, 1) === "9") {
         phone = phone.substring(2, phone.length);
       }
-      
+
       const user = await getUserByPhone(phone);
       checkUserIfNotExist(user);
 

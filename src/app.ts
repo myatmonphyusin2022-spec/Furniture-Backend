@@ -9,6 +9,7 @@ import viewRoutes from "./routes/web/view";
 import healthRoutes from "./routes/v1/health";
 import authRoutes from "./routes/v1/auth";
 import { limiter } from "./middlewares/rateLimiter";
+import userRoutes from "./routes/admin/user";
 
 export const app = express();
 
@@ -37,7 +38,7 @@ app.use(express.static("public"));
 // ==============================
 app.use("/api/v1", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
-app.use(viewRoutes);
+// app.use("/api/v1/admins", userRoutes);
 
 // ==============================
 // Home Route
