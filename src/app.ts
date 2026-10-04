@@ -11,6 +11,7 @@ import authRoutes from "./routes/v1/auth";
 import {auth} from "./middlewares/auth";
 import { limiter } from "./middlewares/rateLimiter";
 import userRoutes from "./routes/admin/user";
+import cookieParser from "cookie-parser";
 
 export const app = express();
 
@@ -27,6 +28,7 @@ app
   .use(morgan("dev"))
   .use(express.urlencoded({ extended: true }))
   .use(express.json())
+  .use(cookieParser())
   .use(cors())
   .use(helmet())
   .use(compression())
