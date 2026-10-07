@@ -12,6 +12,7 @@ import {
 import { generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
 import moment from "moment";
+import { errorCode } from "../config/errorCode";
 import {
   checkOtpErrorIfSameDate,
   checkOtpRowExists,
@@ -28,7 +29,7 @@ const checkUserExists = (user: any) => {
   if (user) {
     const error: AppError = new Error("Phone number already exists");
     error.status = 409;
-    error.code = "Error_already_exists";
+    error.code = errorCode.userExist;
     throw error;
   }
 };
@@ -90,7 +91,7 @@ export const register = [
           if (existingOtp.count >= 3) {
             const error: any = new Error("OTP is allowed only 3 times per day");
             error.status = 405;
-            error.code = "Error_OverLimit";
+            error.code = errorCode.overlimit;
             return next(error);
           }
 
@@ -177,7 +178,7 @@ export const verifyOtp = [
       if (isExpired) {
         const error: AppError = new Error("OTP has expired");
         error.status = 400;
-        error.code = "Error_OTP_Expired";
+        error.code = errorCode.otpExpired;
         return next(error);
       }
 
@@ -191,7 +192,7 @@ export const verifyOtp = [
 
         const error: any = new Error("Invalid OTP");
         error.status = 400;
-        error.code = "Error_Invalid_OTP";
+        error.code = errorCode.otpExpired;
         return next(error);
       }
 
@@ -255,7 +256,7 @@ export const confirmPassword = [
       if (existingOtp?.error === 5) {
         const error: AppError = new Error("This request may be an attack.");
         error.status = 400;
-        error.code = "Error_Bad_Request";
+        error.code = errorCode.attack;
         return next(error);
       }
 
@@ -264,7 +265,7 @@ export const confirmPassword = [
         await updateOtp(existingOtp!.phone, { error: 5 });
         const error: AppError = new Error("Invalid token");
         error.status = 400;
-        error.code = "Error_Invalid_Token";
+        error.code = errorCode.otpExpired;
         return next(error);
       }
 
@@ -276,7 +277,7 @@ export const confirmPassword = [
           "Your account has been expired, pls try again.",
         );
         error.status = 403;
-        error.code = "Error_Expired";
+        error.code = errorCode.requestExpired;
         return next(error);
       }
 
@@ -354,7 +355,7 @@ export const login = [
       if (errors.length > 0) {
         const error: AppError = new Error(errors[0].msg);
         error.status = 400;
-        error.code = "Error_Invalid";
+        error.code = errorCode.invalid;
         return next(error);
       }
 
@@ -372,7 +373,7 @@ export const login = [
           "Your account is temporarily locked. Please contact us.",
         );
         error.status = 401;
-        error.code = "Error_Freeze";
+        error.code = errorCode.accountFreeze;
         return next(error);
       }
 
@@ -398,7 +399,7 @@ export const login = [
 
         const error: any = new Error("Password is incorrect");
         error.status = 401;
-        error.code = "Error_Incorrect_Password";
+        error.code = errorCode.invalid;
         return next(error);
       }
 
@@ -463,7 +464,7 @@ export const logout = async (
     if (!refreshToken) {
       const err: any = new Error("You are an unauthorized user.");
       err.status = 401;
-      err.code = "Error_Unauthenticated";
+      err.code = errorCode.unauthenticated;
       return next(err);
     }
 
@@ -476,7 +477,7 @@ export const logout = async (
     } catch (err) {
       const error: any = new Error("You are not an authenticated user.");
       error.status = 401;
-      error.code = "Error_Unauthenticated";
+      error.code = errorCode.unauthenticated;
       return next(error);
     }
 
@@ -486,7 +487,7 @@ export const logout = async (
     if (user!.phone !== decoded.phone) {
       const error: any = new Error("You are not an authenticated user.");
       error.status = 401;
-      error.code = "Error_Unauthenticated";
+      error.code = errorCode.unauthenticated;
       return next(error);
     }
 
@@ -504,8 +505,16 @@ export const logout = async (
           : ("lax" as const),
     };
 
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    });
 
     res.status(200).json({
       success: true,

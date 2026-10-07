@@ -1,15 +1,16 @@
 // src/utils/auth.ts
+import { errorCode } from "../config/errorCode";
 
 interface AppError extends Error {
   status?: number;
   code?: string;
 }
 
-export const checkUserExists = (user: any): void => {
+export const checkUserExists = (user: unknown): void => {
   if (user) {
     const error: AppError = new Error("Phone number already exists");
     error.status = 409;
-    error.code = "Error_already_exists";
+    error.code = errorCode.userExist;
     throw error;
   }
 };
@@ -23,25 +24,25 @@ export const checkOtpErrorIfSameDate = (
       "OTP is wrong 5 times, please try again tomorrow",
     );
     error.status = 401;
-    error.code = "Error_OverLimit";
+    error.code = errorCode.overlimit;
     throw error;
   }
 };
 
-export const checkOtpRowExists = (otpRow: any): void => {
+export const checkOtpRowExists = (otpRow: unknown): void => {
   if (!otpRow) {
     const error: AppError = new Error("Phone number is incorrect");
     error.status = 404;
-    error.code = "Error_NotFound";
+    error.code = errorCode.notFound;
     throw error;
   }
 };
 
-export const checkUserIfNotExist = (user: any): void => {
+export const checkUserIfNotExist = (user: unknown): void => {
   if (!user) {
     const error: AppError = new Error("This phone has not registered yet.");
     error.status = 401;
-    error.code = "Error_Unauthenticated";
+    error.code = errorCode.unauthorized;
     throw error;
   }
 };
