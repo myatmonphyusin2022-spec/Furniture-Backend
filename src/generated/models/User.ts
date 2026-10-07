@@ -254,7 +254,7 @@ export type UserGroupByOutputType = {
   status: $Enums.Status
   lastLogin: Date | null
   errorLoginCount: number
-  randToken: string
+  randToken: string | null
   image: string | null
   createdAt: Date
   updatedAt: Date
@@ -295,7 +295,7 @@ export type UserWhereInput = {
   status?: Prisma.EnumStatusFilter<"User"> | $Enums.Status
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   errorLoginCount?: Prisma.IntFilter<"User"> | number
-  randToken?: Prisma.StringFilter<"User"> | string
+  randToken?: Prisma.StringNullableFilter<"User"> | string | null
   image?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -316,7 +316,7 @@ export type UserOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
   errorLoginCount?: Prisma.SortOrder
-  randToken?: Prisma.SortOrder
+  randToken?: Prisma.SortOrderInput | Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -340,7 +340,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumStatusFilter<"User"> | $Enums.Status
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   errorLoginCount?: Prisma.IntFilter<"User"> | number
-  randToken?: Prisma.StringFilter<"User"> | string
+  randToken?: Prisma.StringNullableFilter<"User"> | string | null
   image?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -361,7 +361,7 @@ export type UserOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
   errorLoginCount?: Prisma.SortOrder
-  randToken?: Prisma.SortOrder
+  randToken?: Prisma.SortOrderInput | Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -387,7 +387,7 @@ export type UserScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumStatusWithAggregatesFilter<"User"> | $Enums.Status
   lastLogin?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   errorLoginCount?: Prisma.IntWithAggregatesFilter<"User"> | number
-  randToken?: Prisma.StringWithAggregatesFilter<"User"> | string
+  randToken?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   image?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -404,7 +404,7 @@ export type UserCreateInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -425,7 +425,7 @@ export type UserUncheckedCreateInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -445,7 +445,7 @@ export type UserUpdateInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -466,7 +466,7 @@ export type UserUncheckedUpdateInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -487,7 +487,7 @@ export type UserCreateManyInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -504,7 +504,7 @@ export type UserUpdateManyMutationInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -522,7 +522,7 @@ export type UserUncheckedUpdateManyInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -692,7 +692,7 @@ export type UserCreateWithoutOrdersInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -712,7 +712,7 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -747,7 +747,7 @@ export type UserUpdateWithoutOrdersInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -767,7 +767,7 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -786,7 +786,7 @@ export type UserCreateWithoutPostsInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -806,7 +806,7 @@ export type UserUncheckedCreateWithoutPostsInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -841,7 +841,7 @@ export type UserUpdateWithoutPostsInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -861,7 +861,7 @@ export type UserUncheckedUpdateWithoutPostsInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -880,7 +880,7 @@ export type UserCreateWithoutProductsInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -900,7 +900,7 @@ export type UserUncheckedCreateWithoutProductsInput = {
   status?: $Enums.Status
   lastLogin?: Date | string | null
   errorLoginCount?: number
-  randToken: string
+  randToken?: string | null
   image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -944,7 +944,7 @@ export type UserScalarWhereInput = {
   status?: Prisma.EnumStatusFilter<"User"> | $Enums.Status
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   errorLoginCount?: Prisma.IntFilter<"User"> | number
-  randToken?: Prisma.StringFilter<"User"> | string
+  randToken?: Prisma.StringNullableFilter<"User"> | string | null
   image?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -961,7 +961,7 @@ export type UserUpdateWithoutProductsInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -981,7 +981,7 @@ export type UserUncheckedUpdateWithoutProductsInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1001,7 +1001,7 @@ export type UserUncheckedUpdateManyWithoutProductsInput = {
   status?: Prisma.EnumStatusFieldUpdateOperationsInput | $Enums.Status
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   errorLoginCount?: Prisma.IntFieldUpdateOperationsInput | number
-  randToken?: Prisma.StringFieldUpdateOperationsInput | string
+  randToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1161,7 +1161,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     status: $Enums.Status
     lastLogin: Date | null
     errorLoginCount: number
-    randToken: string
+    randToken: string | null
     image: string | null
     createdAt: Date
     updatedAt: Date

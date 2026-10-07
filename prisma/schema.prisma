@@ -115,7 +115,7 @@ model User {
   status          Status    @default(ACTIVE)
   lastLogin       DateTime?
   errorLoginCount Int       @default(0) @db.SmallInt
-  randToken       String
+  randToken       String?
   image           String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

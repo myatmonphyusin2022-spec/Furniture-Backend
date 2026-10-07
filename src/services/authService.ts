@@ -7,15 +7,12 @@ import "dotenv/config";
 // 1. DATABASE CONNECTION SETUP
 // ==========================================
 
-// 1. PostgreSQL Connection Pool ဖန်တီးခြင်း (Database သို့ Connection အများအပြား ချိတ်ဆက်နိုင်ရန်)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// 2. Prisma တွင် PostgreSQL Driver Adapter သုံးနိုင်ရန် Pool ကို ထည့်ပေးခြင်း
 const adapter = new PrismaPg(pool);
 
-// 3. Adapter ကို အသုံးပြု၍ Prisma Client Instance ဖန်တီးခြင်း
 const prisma = new PrismaClient({
   adapter,
 });
@@ -31,7 +28,7 @@ const prisma = new PrismaClient({
 export const getUserByPhone = async (phone: string) => {
   return await prisma.user.findUnique({
     where: {
-      phone: phone, // phone field ကို အခြေခံ၍ Unique Record ရှာခြင်း
+      phone: phone,
     },
   });
 };
@@ -42,7 +39,7 @@ export const getUserByPhone = async (phone: string) => {
  */
 export const createOtp = async (otpData: any) => {
   return await prisma.otp.create({
-    data: otpData, // OTP Record အသစ်ဆောက်ခြင်း
+    data: otpData,
   });
 };
 
@@ -53,7 +50,7 @@ export const createOtp = async (otpData: any) => {
 export const getOtpByPhone = async (phone: string) => {
   return await prisma.otp.findUnique({
     where: {
-      phone: phone, // phone field ကို အခြေခံ၍ OTP Record ရှာခြင်း
+      phone: phone,
     },
   });
 };
@@ -61,36 +58,50 @@ export const getOtpByPhone = async (phone: string) => {
 /**
  * ရှိပြီးသား OTP Record ကို ပြင်ဆင်/Update လုပ်ပေးသည့် Service Function
  * @param phone - ပြင်ဆင်လိုသော OTP ပိုင်ရှင်၏ ဖုန်းနံပါတ်
- * @param otpData - ပြင်ဆင်မည့် အချက်အလက်များ (ဥပမာ- OTP အသစ်၊ Count သို့မဟုတ် Error အကြိမ်ရေ)
+ * @param otpData - ပြင်ဆင်မည့် အချက်အလက်များ
  */
 export const updateOtp = async (phone: string, otpData: any) => {
   return await prisma.otp.update({
     where: {
-      phone: phone, // schema.prisma တွင် phone ၌ @unique ပါဝင်ရန် လိုအပ်သည်
+      phone: phone,
     },
-    data: otpData, // Update လုပ်မည့် အချက်အလက်များကို ထည့်သွင်းခြင်း
+    data: otpData,
   });
 };
 
+/**
+ * User အသစ် ဖန်တီးပေးသည့် Service Function
+ * @param userData - သိမ်းဆည်းမည့် User အချက်အလက်များ
+ */
 export const createUser = async (userData: any) => {
   return await prisma.user.create({
-    data: userData, // User Record အသစ်ဆောက်ခြင်း
+    data: userData,
   });
 };
 
-export const updateUser = async (phone: string, userData: any) => {
+/**
+ * User ၏ ဖုန်းနံပါတ် သို့မဟုတ် ID ဖြင့် User အချက်အလက်များကို Update လုပ်ပေးသည့် Service Function
+ * @param phoneOrId - ပြင်ဆင်လိုသော User ၏ ဖုန်းနံပါတ် (string) သို့မဟုတ် ID (number)
+ * @param userData - Update လုပ်မည့် အချက်အလက်များ
+ */
+export const updateUser = async (phoneOrId: string | number, userData: any) => {
+  const isPhone = typeof phoneOrId === "string";
   return await prisma.user.update({
-    where: {
-      phone: phone, // schema.prisma တွင် phone ၌ @unique ပါဝင်ရန် လိုအပ်သည်
-    },
-    data: userData, // Update လုပ်မည့် အချက်အလက်များကို ထည့်သွင်းခြင်း
+    where: isPhone
+      ? { phone: phoneOrId as string }
+      : { id: phoneOrId as number },
+    data: userData,
   });
 };
 
+/**
+ * ID ဖြင့် User ကို ရှာဖွေပေးသည့် Service Function
+ * @param id - ရှာဖွေလိုသော User ၏ ID
+ */
 export const getUserById = async (id: number) => {
   return await prisma.user.findUnique({
     where: {
-      id: id, // id field ကို အခြေခံ၍ Unique Record ရှာခြင်း
+      id: id,
     },
   });
 };

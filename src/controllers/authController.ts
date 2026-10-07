@@ -360,10 +360,8 @@ export const login = [
       }
 
       const password = req.body.password;
-      let phone = req.body.phone;
-      if (phone.slice(0, 2) === "09" || phone.slice(0, 1) === "9") {
-        phone = phone.substring(2, phone.length);
-      }
+      const rawPhone = req.body.phone ? String(req.body.phone).trim() : "";
+      const phone = rawPhone.replace(/^(09|9)/, "");
 
       const user = await getUserByPhone(phone);
       checkUserIfNotExist(user);
@@ -481,6 +479,13 @@ export const logout = async (
       return next(error);
     }
 
+    if (isNaN(decoded.userId)) {
+      const error: any = new Error("You are not an authenticated user.");
+      error.status = 401;
+      error.code = errorCode.unauthenticated;
+      return next(error);
+    }
+
     const user = await getUserById(decoded.userId);
     checkUserIfNotExist(user);
 
@@ -505,16 +510,8 @@ export const logout = async (
           : ("lax" as const),
     };
 
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    });
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    });
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
 
     res.status(200).json({
       success: true,
