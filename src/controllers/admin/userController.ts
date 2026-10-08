@@ -10,8 +10,10 @@ export const getAllUsers = (
   next: NextFunction,
 ) => {
   const id = req.userId;
+
+  res.cookie("i18next", "mm");
   res.status(200).json({
-    message: "All Users.",
+    message: req.t("welcome"),
     currentUserId: id,
   });
 };

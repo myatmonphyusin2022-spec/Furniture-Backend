@@ -10,8 +10,12 @@ import healthRoutes from "./routes/v1/health";
 import authRoutes from "./routes/v1/auth";
 import { auth } from "./middlewares/auth";
 import { limiter } from "./middlewares/rateLimiter";
+import i18next from "i18next";
+import Backend from "i18next-fs-backend";
+import middleware from "i18next-http-middleware";
 import userRoutes from "./routes/admin/user";
 import cookieParser from "cookie-parser";
+import path from "path";
 
 export const app = express();
 
@@ -46,6 +50,27 @@ app
   .use(helmet())
   .use(compression())
   .use(limiter);
+
+i18next
+  .use(Backend)
+  .use(middleware.LanguageDetector)
+  .init({
+    backend: {
+      loadPath: path.join(
+        process.cwd(),
+        "src/locales",
+        "{{lng}}",
+        "{{ns}}.json",
+      ),
+    },
+    detection: {
+      order: ["querystring", "cookie"],
+      caches: ["cookie"],
+    },
+    fallbackLng: "en",
+    preload: ["en", "mm"],
+  });
+app.use(middleware.handle(i18next));
 
 app.use(express.static("public"));
 
