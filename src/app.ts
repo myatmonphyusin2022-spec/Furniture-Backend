@@ -13,10 +13,11 @@ import { limiter } from "./middlewares/rateLimiter";
 import i18next from "i18next";
 import Backend from "i18next-fs-backend";
 import middleware from "i18next-http-middleware";
-import userRoutes from "./routes/admin/user";
-import profileRoutes from "./routes/api/user"
+import adminRoutes from "./routes/admin/user";
+import profileRoutes from "./routes/api/user";
 import cookieParser from "cookie-parser";
 import path from "path";
+import { authorise } from "./middlewares/authorise";
 
 export const app = express();
 
@@ -79,7 +80,7 @@ app.use(express.static("public"));
 
 app.use("/api/v1", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/admins", auth, userRoutes);
+app.use("/api/v1/admins", auth, adminRoutes);
 app.use("/api/v1", profileRoutes);
 
 // Home Route
