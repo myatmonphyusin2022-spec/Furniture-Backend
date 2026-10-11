@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { query, validationResult } from "express-validator"; // body အစား query သို့မဟုတ် check သုံးပါ
 import { errorCode } from "../../config/errorCode";
+import { title } from "node:process";
+import { authorise } from "../../middlewares/authorise";
+import { getUserById } from "../../services/authService";
+import { checkUserIfNotExist } from "../../utils/auth";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -39,3 +43,22 @@ export const changeLanguage = [
     }
   },
 ];
+export const testPermission = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  const userId = req.userId;
+  const user = await getUserById(userId!);
+  checkUserIfNotExist(user);
+  const info: any = {
+    title: "Testing Permission",
+  };
+  const can = authorise(true, user!.role, "AUTHOR");
+  if (can) {
+    info.content = "You have pemission to read this line";
+  }
+  // if user.role === "AUTHOR"
+  // content = "You are an author"
+  res.status(200).json({ info });
+};

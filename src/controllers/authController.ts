@@ -9,6 +9,7 @@ import {
   updateUser,
   getUserById,
 } from "../services/authService";
+import createError from "http-errors";
 import { generateToken } from "../utils/generate";
 import bcrypt from "bcrypt";
 import moment from "moment";
@@ -292,12 +293,12 @@ export const confirmPassword = [
 
       // Generate JWT Access & Refresh tokens
       const accessTokenPayload = jwt.sign(
-        { userId: newUser.id, phone: newUser.phone },
+        { userId: newUser.id, phone: newUser.phone, role: newUser.role },
         process.env.ACCESS_TOKEN_SECRET!,
         { expiresIn: 60 * 15 },
       );
       const refreshTokenPayload = jwt.sign(
-        { userId: newUser.id, phone: newUser.phone },
+        { userId: newUser.id, phone: newUser.phone, role: newUser.role },
         process.env.REFRESH_TOKEN_SECRET!,
         { expiresIn: "30d" },
       );
@@ -402,13 +403,13 @@ export const login = [
       }
 
       const accessTokenPayload = jwt.sign(
-        { userId: user!.id, phone: user!.phone },
+        { userId: user!.id, phone: user!.phone, role: user!.role },
         process.env.ACCESS_TOKEN_SECRET!,
         { expiresIn: 60 * 15 },
       );
 
       const refreshTokenPayload = jwt.sign(
-        { userId: user!.id, phone: user!.phone },
+        { userId: user!.id, phone: user!.phone, role: user!.role },
         process.env.REFRESH_TOKEN_SECRET!,
         { expiresIn: "30d" },
       );
@@ -521,3 +522,96 @@ export const logout = async (
     next(error);
   }
 };
+
+//Forget Password
+export const forgetpassword = [
+  body("phone", "Invalid Phone Number.")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 5, max: 12 }),
+
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req).array({ onlyFirstError: true });
+      if (errors.length > 0) {
+        // http-errors: createError(status, message, { customProperty })
+        return next(
+          createError(400, errors[0].msg, { code: errorCode.invalid }),
+        );
+      }
+
+      let phone = req.body.phone;
+      if (phone.slice(0, 2) === "09") {
+        phone = phone.substring(2, phone.length);
+      }
+
+      const user = await getUserByPhone(phone);
+      checkUserIfNotExist(user);
+
+      const otp = 123456;
+      const salt = await bcrypt.genSalt(10);
+      const hashOtp = await bcrypt.hash(otp.toString(), salt);
+      const token = generateToken();
+
+      const existingOtp: any = await getOtpByPhone(phone);
+      let result: any;
+
+      if (!existingOtp) {
+        // If no OTP record exists yet
+        const otpData = {
+          phone: phone,
+          otp: hashOtp,
+          rememberToken: token,
+          count: 1,
+          error: 0,
+        };
+        result = await updateOtp(phone, otpData);
+      } else {
+        const lastOtpRequest = new Date(
+          existingOtp.updatedAt,
+        ).toLocaleDateString();
+        const today = new Date().toLocaleDateString();
+        const isSameDate = lastOtpRequest === today;
+
+        checkOtpErrorIfSameDate(isSameDate, existingOtp.error);
+
+        // Access id safely (use existingOtp._id || existingOtp.id depending on DB/Prisma/Mongoose)
+        const otpId = existingOtp.id || existingOtp._id;
+
+        if (!isSameDate) {
+          const otpData = {
+            otp: hashOtp,
+            rememberToken: token,
+            count: 1,
+            error: 0,
+          };
+          result = await updateOtp(otpId, otpData);
+        } else {
+          if (existingOtp.count >= 3) {
+            return next(
+              createError(405, "OTP is allowed to request 3 times per day", {
+                code: errorCode.overlimit,
+              }),
+            );
+          } else {
+            const otpData = {
+              otp: hashOtp,
+              rememberToken: token,
+              count: existingOtp.count + 1,
+            };
+            result = await updateOtp(otpId, otpData);
+          }
+        }
+      }
+
+      res.status(200).json({
+        message: `We are sending OTP to 09${result.phone} to reset password.`,
+        phone: result.phone,
+        token: result.rememberToken,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+];

@@ -1,4 +1,3 @@
-// src/utils/auth.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { errorCode } from "../config/errorCode";
@@ -13,10 +12,22 @@ export const auth = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const accessToken = req.cookies ? req.cookies.accessToken : null;
-  const refreshToken = req.cookies ? req.cookies.refreshToken : null;
+  let accessToken = null;
 
-  if (!refreshToken) {
+  // ၁။ Authorization Header (Bearer Token) ကို အရင်ဆုံး စစ်ဆေးပါ
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    accessToken = authHeader.split(" ")[1];
+  }
+
+  // ၂။ Header မှာ မပါလာမှသာ Cookie ထဲက accessToken ကို ယူသုံးပါ
+  if (!accessToken && req.cookies && req.cookies.accessToken) {
+    accessToken = req.cookies.accessToken;
+  }
+
+  let refreshToken = req.cookies ? req.cookies.refreshToken : null;
+
+  if (!accessToken && !refreshToken) {
     const error: any = new Error("You are not an authenticated user.");
     error.status = 401;
     error.code = errorCode.unauthenticated;
@@ -24,10 +35,17 @@ export const auth = async (
   }
 
   const generateNewTokens = async () => {
+    if (!refreshToken) {
+      const err: any = new Error("You are not an authenticated user.");
+      err.status = 401;
+      err.code = errorCode.unauthenticated;
+      return next(err);
+    }
+
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as {
-        id: number;
+        userId: number;
         phone: string;
       };
     } catch (error) {
@@ -37,14 +55,14 @@ export const auth = async (
       return next(err);
     }
 
-    if (isNaN(decoded.id)) {
+    if (isNaN(decoded.userId)) {
       const error: any = new Error("You are not an authenticated user.");
       error.status = 401;
       error.code = errorCode.unauthenticated;
       return next(error);
     }
 
-    const user = await getUserById(decoded.id);
+    const user = await getUserById(decoded.userId);
     if (!user) {
       const error: any = new Error("This account has not registered!.");
       error.status = 401;
@@ -52,58 +70,42 @@ export const auth = async (
       return next(error);
     }
 
-    if (user.phone !== decoded.phone) {
+    if (user.phone !== decoded.phone || user.randToken !== refreshToken) {
       const error: any = new Error("You are not an authenticated user.");
       error.status = 401;
       error.code = errorCode.unauthenticated;
       return next(error);
     }
 
-    if (user.randToken !== refreshToken) {
-      const error: any = new Error("You are not an authenticated user.");
-      error.status = 401;
-      error.code = errorCode.unauthenticated;
-      return next(error);
-    }
-
-    // Authorization token
-    const accessTokenPayload = { id: user.id };
-    const refreshTokenPayload = { id: user.id, phone: user.phone };
+    const accessTokenPayload = { userId: user.id };
+    const refreshTokenPayload = { userId: user.id, phone: user.phone };
 
     const newAccessToken = jwt.sign(
       accessTokenPayload,
       process.env.ACCESS_TOKEN_SECRET!,
-      {
-        expiresIn: 60 * 15, // 15 min
-      },
+      { expiresIn: "15m" },
     );
 
     const newRefreshToken = jwt.sign(
       refreshTokenPayload,
       process.env.REFRESH_TOKEN_SECRET!,
-      {
-        expiresIn: "30d",
-      },
+      { expiresIn: "30d" },
     );
 
-    const userData = {
-      randToken: newRefreshToken,
-    };
-
-    await updateUser(user.id, userData);
+    await updateUser(user.id, { randToken: newRefreshToken });
 
     res
       .cookie("accessToken", newAccessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        maxAge: 15 * 60 * 1000, // 15 minutes
+        maxAge: 15 * 60 * 1000,
       })
       .cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
     req.userId = user.id;
@@ -113,23 +115,20 @@ export const auth = async (
   if (!accessToken) {
     return await generateNewTokens();
   } else {
-    // Verify access Token
     try {
       const decoded = jwt.verify(
         accessToken,
         process.env.ACCESS_TOKEN_SECRET!,
-      ) as {
-        id: number;
-      };
+      ) as { userId: number };
 
-      if (isNaN(decoded.id)) {
+      if (isNaN(decoded.userId)) {
         const error: any = new Error("You are not an authenticated user.");
         error.status = 401;
         error.code = errorCode.unauthenticated;
         return next(error);
       }
 
-      req.userId = decoded.id;
+      req.userId = decoded.userId;
       return next();
     } catch (error: any) {
       if (error.name === "TokenExpiredError") {

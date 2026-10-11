@@ -5,7 +5,10 @@ import {
   verifyOtp,
   confirmPassword,
   login, 
-  logout
+  logout,
+  forgetPassword,
+  verifyOtpPassword,
+  resetPassword
 } from "../../controllers/authController";
 
 const router = Router();
@@ -15,5 +18,9 @@ router.post("/verify-otp", verifyOtp);
 router.post("/confirm-password", confirmPassword);
 router.post("/login", login); 
 router.post("/logout", logout);
+
+router.post("/forget-password",forgetPassword);
+router.post("/verify", verifyOtpPassword);
+router.post("/reset-password",resetPassword);
 // router.post("/refresh-token", setRefreshToken);
 export default router;

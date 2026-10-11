@@ -80,7 +80,7 @@ app.use(express.static("public"));
 
 app.use("/api/v1", healthRoutes);
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/admins", auth, adminRoutes);
+app.use("/api/v1/admins", auth,authorise(true, "ADMIN"), adminRoutes);
 app.use("/api/v1", profileRoutes);
 
 // Home Route
