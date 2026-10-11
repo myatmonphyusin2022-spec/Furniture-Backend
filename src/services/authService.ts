@@ -60,13 +60,34 @@ export const getOtpByPhone = async (phone: string) => {
  * @param phone - ပြင်ဆင်လိုသော OTP ပိုင်ရှင်၏ ဖုန်းနံပါတ်
  * @param otpData - ပြင်ဆင်မည့် အချက်အလက်များ
  */
-export const updateOtp = async (phone: string, otpData: any) => {
-  return await prisma.otp.update({
-    where: {
-      phone: phone,
-    },
-    data: otpData,
-  });
+export const updateOtp = async (identifier: string | number, otpData: any) => {
+  // Check if identifier is an ID (number/string ID) or a phone string
+  // If your database uses a numeric auto-increment ID or string UUID for id:
+  const isId =
+    typeof identifier === "number" ||
+    (typeof identifier === "string" && identifier.length > 12);
+
+  if (isId) {
+    // If we have an existing ID, update by id
+    return await prisma.otp.update({
+      where: { id: Number(identifier) },
+      data: otpData,
+    });
+  } else {
+    // Otherwise, use upsert based on the phone number
+    const phoneStr = String(identifier);
+    return await prisma.otp.upsert({
+      where: { phone: phoneStr },
+      update: otpData,
+      create: {
+        phone: phoneStr,
+        otp: otpData.otp || "",
+        rememberToken: otpData.rememberToken || "",
+        count: otpData.count || 1,
+        error: otpData.error || 0,
+      },
+    });
+  }
 };
 
 /**

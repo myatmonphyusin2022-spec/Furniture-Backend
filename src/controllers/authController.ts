@@ -524,7 +524,7 @@ export const logout = async (
 };
 
 //Forget Password
-export const forgetpassword = [
+export const forgetPassword = [
   body("phone", "Invalid Phone Number.")
     .trim()
     .notEmpty()
@@ -541,7 +541,7 @@ export const forgetpassword = [
         );
       }
 
-      let phone = req.body.phone;
+      let phone = String(req.body.phone || "");
       if (phone.slice(0, 2) === "09") {
         phone = phone.substring(2, phone.length);
       }
@@ -610,6 +610,258 @@ export const forgetpassword = [
         phone: result.phone,
         token: result.rememberToken,
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+export const verifyOtpPassword = [
+  body("phone", "Invalid Phone Number")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 5, max: 12 }),
+  body("otp", "Invalid OTP")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 6, max: 6 }),
+  body("token", "Invalid token").trim().notEmpty().escape(),
+
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // [FIX 1]: Wrapped inside try-catch to properly pass async errors to next()
+      const errors = validationResult(req).array({ onlyFirstError: true });
+      if (errors.length > 0) {
+        // [FIX 2]: Corrected createError parameter signature from createError(status, message, code)
+        // to standard http-errors format: createError(status, message, { code: ... })
+        return next(
+          createError(400, errors[0].msg, { code: errorCode.invalid }),
+        );
+      }
+
+      let { phone, otp, token } = req.body;
+
+      // [FIX 3]: Clean phone number prefix same as in forgetpassword
+      if (phone.slice(0, 2) === "09") {
+        phone = phone.substring(2, phone.length);
+      }
+
+      const user = await getUserByPhone(phone);
+      checkUserIfNotExist(user);
+
+      const existingOtp: any = await getOtpByPhone(phone);
+
+      // [FIX 4]: Added check if existingOtp is missing to prevent application crash
+      if (!existingOtp) {
+        return next(
+          createError(404, "OTP record not found. Please request a new OTP.", {
+            code: errorCode.invalid,
+          }),
+        );
+      }
+
+      const lastOtpVerify = new Date(
+        existingOtp.updatedAt,
+      ).toLocaleDateString();
+      const today = new Date().toLocaleDateString();
+      const isSameDate = lastOtpVerify === today;
+
+      // If OTP error is in the same date and over limit
+      checkOtpErrorIfSameDate(isSameDate, existingOtp.error);
+
+      // Token is wrong
+      if (existingOtp.rememberToken !== token) {
+        const otpData = {
+          error: 5,
+        };
+        await updateOtp(existingOtp.id || existingOtp._id, otpData);
+        return next(
+          createError(400, "Invalid Token", { code: errorCode.invalid }),
+        );
+      }
+
+      // OTP is expired
+      const isExpired =
+        moment().diff(moment(existingOtp.updatedAt), "minutes") > 2;
+      if (isExpired) {
+        return next(
+          createError(403, "OTP is expired", { code: errorCode.otpExpired }),
+        );
+      }
+
+      const isMatchOtp = await bcrypt.compare(otp, existingOtp.otp);
+
+      // OTP is wrong
+      if (!isMatchOtp) {
+        const otpId = existingOtp.id || existingOtp._id;
+        // If OTP error is first time today
+        if (!isSameDate) {
+          const otpData = {
+            error: 1,
+          };
+          await updateOtp(otpId, otpData);
+        } else {
+          // If OTP error is not first time today
+          const otpData = {
+            error: { increment: 1 },
+          };
+          await updateOtp(otpId, otpData);
+        }
+
+        return next(
+          createError(401, "OTP is incorrect", { code: errorCode.invalid }),
+        );
+      }
+
+      const verifyToken = generateToken();
+      const otpData = {
+        verifyToken,
+        error: 0,
+        count: 1,
+      };
+      const otpId = existingOtp.id || existingOtp._id;
+      const result = await updateOtp(otpId, otpData);
+
+      res.status(200).json({
+        message: "OTP is successfully verified to reset password",
+        phone: phone, // Use the local phone variable you already trimmed and verified
+        token: result?.verifyToken || verifyToken,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
+// Reset Password
+export const resetPassword = [
+  // Validate and sanitize fields.
+  body("token", "Token must not be empty.").trim().notEmpty().escape(),
+  body("phone", "Invalid Phone Number.")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 5, max: 12 }),
+  body("password", "Password must be 8 digits.")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 8, max: 8 }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // [FIX 1]: Wrapped inside a try-catch block to catch and pass asynchronous errors safely
+      const errors = validationResult(req).array({ onlyFirstError: true });
+      // If validation error occurs
+      if (errors.length > 0) {
+        return next(
+          createError(400, errors[0].msg, { code: errorCode.invalid }),
+        ); // [FIX 2]: Corrected createError format
+      }
+
+      const { token, password } = req.body;
+      let phone = req.body.phone;
+
+      // [FIX 3]: Clean phone number prefix (e.g., removing "09") for consistency with other methods
+      if (phone.slice(0, 2) === "09") {
+        phone = phone.substring(2, phone.length);
+      }
+
+      const user = await getUserByPhone(phone);
+      checkUserIfNotExist(user);
+
+      const existingOtp: any = await getOtpByPhone(phone);
+      if (!existingOtp) {
+        return next(
+          createError(404, "OTP record not found.", {
+            code: errorCode.invalid,
+          }),
+        );
+      }
+
+      if (existingOtp.error === 5) {
+        return next(
+          createError(
+            401,
+            "This request may be an attack. If not, try again tomorrow.",
+            { code: errorCode.attack }, // [FIX 4]: Fixed malformed comma-separated error string into proper status/message/options format
+          ),
+        );
+      }
+
+      if (existingOtp.verifyToken !== token) {
+        const otpData = {
+          error: 5,
+        };
+        const otpId = existingOtp.id || existingOtp._id;
+        await updateOtp(otpId, otpData);
+        return next(
+          createError(400, "Token is invalid.", { code: errorCode.attack }),
+        ); // [FIX 5]: Corrected parameter order
+      }
+
+      // request is expired
+      const isExpired =
+        moment().diff(moment(existingOtp.updatedAt), "minutes") > 5;
+      if (isExpired) {
+        return next(
+          createError(
+            403,
+            "Your request is expired. Please try again.",
+            { code: errorCode.requestExpired }, // [FIX 6]: Corrected createError options format
+          ),
+        );
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashPassword = await bcrypt.hash(password, salt);
+
+      // jwt token payloads
+      const accessPayload = { id: user!.id };
+      const refreshPayload = { id: user!.id, phone: user!.phone };
+
+      const accessToken = jwt.sign(
+        accessPayload,
+        process.env.ACCESS_TOKEN_SECRET!,
+        {
+          expiresIn: "15m", // [FIX 7]: Fixed broken line-break calculation (changed to standard string format)
+        },
+      );
+
+      const refreshToken = jwt.sign(
+        refreshPayload,
+        process.env.REFRESH_TOKEN_SECRET!,
+        {
+          expiresIn: "30d", // "30d" in production
+        },
+      );
+
+      const userUpdateData = {
+        password: hashPassword,
+        randToken: refreshToken,
+      };
+      await updateUser(user!.id, userUpdateData);
+
+      res
+        .cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "none",
+          maxAge: 15 * 60 * 1000, // [FIX 8]: Fixed broken math line breaks into a clean expression (15 mins)
+          path: "/",
+        })
+        .cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "none",
+          maxAge: 30 * 24 * 60 * 60 * 1000, // [FIX 9]: Fixed broken math line breaks into a clean expression (30 days)
+          path: "/",
+        })
+        .status(200)
+        .json({
+          message: "Successfully reset your password.",
+          userId: user!.id,
+        });
     } catch (error) {
       next(error);
     }
