@@ -1,47 +1,39 @@
+import { FallbackLng } from "./../node_modules/i18next/typescript/options.d";
 import express, { Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import compression from "compression";
 import cors from "cors";
 import morgan from "morgan";
-
-import * as errorController from "./controllers/web/errorController";
-import viewRoutes from "./routes/web/view";
-import healthRoutes from "./routes/v1/health";
-import authRoutes from "./routes/v1/auth";
-import { auth } from "./middlewares/auth";
-import { limiter } from "./middlewares/rateLimiter";
+import cookieParser from "cookie-parser";
 import i18next from "i18next";
 import Backend from "i18next-fs-backend";
 import middleware from "i18next-http-middleware";
-import adminRoutes from "./routes/admin/user";
-import profileRoutes from "./routes/api/user";
-import cookieParser from "cookie-parser";
 import path from "path";
-import { authorise } from "./middlewares/authorise";
+import { limiter } from "./middlewares/rateLimiter";
+import routes from "./routes/v1";
+
 
 export const app = express();
 
-// View Engine
-
 app.set("view engine", "ejs");
 app.set("views", "src/views");
-var whitelist = ["http://example1.com", "http://localhost:3000"];
+
+var whitelist = ["http://example1.com", "http://localhost:5173"];
 var corsOptions = {
   origin: function (
     origin: any,
-    callback: (err: Error | null, origin?: any) => void,
+    callback: (err: Error | null, origin?: any) => void
   ) {
-    if (!origin) return callback(null, true); // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin ( like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
     if (whitelist.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // Allow cookies to be sent with requests
+  credentials: true, // Allow cookies or authorization header
 };
-
-// Global Middleware
 
 app
   .use(morgan("dev"))
@@ -62,7 +54,7 @@ i18next
         process.cwd(),
         "src/locales",
         "{{lng}}",
-        "{{ns}}.json",
+        "{{ns}}.json"
       ),
     },
     detection: {
@@ -74,42 +66,20 @@ i18next
   });
 app.use(middleware.handle(i18next));
 
-app.use(express.static("public"));
-
-// API Routes
-
-app.use("/api/v1", healthRoutes);
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/admins", auth,authorise(true, "ADMIN"), adminRoutes);
-app.use("/api/v1", profileRoutes);
-
-// Home Route
-
-app.get("/", (req: Request, res: Response) => {
-  res.render("index", {
-    title: "Furniture Backend",
-  });
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+  next();
 });
 
-// Web Routes
+app.use(express.static("public"));
+app.use(express.static("uploads"));
 
-app.use("/", viewRoutes);
-
-// 404 Error Handler
-
-app.use(errorController.notFound);
-
-// Global Error Handler
+app.use(routes);
 
 app.use((error: any, req: Request, res: Response, next: NextFunction) => {
   const status = error.status || 500;
   const message = error.message || "Server Error";
-  const errorCode = error.code || "ERROR_CODE";
-
-  res.status(status).json({
-    message,
-    error: errorCode,
-  });
+  const errorCode = error.code || "Error_Code";
+  res.status(status).json({ message, error: errorCode });
 });
 
-export default app;
