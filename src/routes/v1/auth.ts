@@ -7,7 +7,7 @@ import {
   login, 
   logout,
   forgetPassword,
-  verifyOtpPassword,
+ verifyOtpForPassword,
   resetPassword
 } from "../../controllers/authController";
 
@@ -20,7 +20,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 router.post("/forget-password",forgetPassword);
-router.post("/verify", verifyOtpPassword);
+router.post("/verify", verifyOtpForPassword);
 router.post("/reset-password",resetPassword);
 // router.post("/refresh-token", setRefreshToken);
 export default router;

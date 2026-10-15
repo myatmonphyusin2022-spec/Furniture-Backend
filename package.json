@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/myatmonphyusin2022-spec/Furniture-Backend#readme",
   "dependencies": {
-    "@prisma/adapter-pg": "^7.9.0",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.8.0",
     "@types/cookie-parser": "^1.4.10",
     "bcrypt": "^6.0.0",
@@ -42,7 +42,7 @@
     "jsonwebtoken": "^9.0.3",
     "moment": "^2.31.0",
     "morgan": "^1.11.0",
-    "pg": "^8.23.0"
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",
