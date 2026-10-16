@@ -62,3 +62,10 @@ export const testPermission = async (
   // content = "You are an author"
   res.status(200).json({ info });
 };
+export const uploadProfile = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  res.status(200).json({ message: "Profile picture uploaded successfully." });
+};
