@@ -11,18 +11,22 @@ import middleware from "i18next-http-middleware";
 import path from "path";
 import { limiter } from "./middlewares/rateLimiter";
 import routes from "./routes/v1";
-
+import cron from "node-cron";
+import {
+  createOrUpdateSettingStatus,
+  getSettingStatus,
+} from "./services/settingService";
 
 export const app = express();
 
 app.set("view engine", "ejs");
 app.set("views", "src/views");
-app.set("trust proxy",true);
+app.set("trust proxy", true);
 var whitelist = ["http://example1.com", "http://localhost:5173"];
 var corsOptions = {
   origin: function (
     origin: any,
-    callback: (err: Error | null, origin?: any) => void
+    callback: (err: Error | null, origin?: any) => void,
   ) {
     // Allow requests with no origin ( like mobile apps or curl requests)
     if (!origin) return callback(null, true);
@@ -54,7 +58,7 @@ i18next
         process.cwd(),
         "src/locales",
         "{{lng}}",
-        "{{ns}}.json"
+        "{{ns}}.json",
       ),
     },
     detection: {
@@ -83,3 +87,11 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
   res.status(status).json({ message, error: errorCode });
 });
 
+cron.schedule("* * * * *", async () => {
+  console.log("Running a task every minutes for testing purpose");
+  const setting = await getSettingStatus("maintenance");
+  if (setting?.value === "true") {
+    await createOrUpdateSettingStatus("maintenance", "false");
+    console.log(`Now maintenance mode is off.`);
+  }
+});

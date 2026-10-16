@@ -25,6 +25,7 @@
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.8.0",
     "@types/cookie-parser": "^1.4.10",
+    "@types/node-cron": "^3.0.11",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -42,6 +43,7 @@
     "jsonwebtoken": "^9.0.3",
     "moment": "^2.31.0",
     "morgan": "^1.11.0",
+    "node-cron": "^4.6.0",
     "pg": "^8.23.1"
   },
   "devDependencies": {
