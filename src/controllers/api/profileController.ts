@@ -8,6 +8,7 @@ import { checkUserIfNotExist } from "../../utils/auth";
 
 interface CustomRequest extends Request {
   userId?: number;
+  file?: any;
 }
 
 export const changeLanguage = [
@@ -67,5 +68,9 @@ export const uploadProfile = async (
   res: Response,
   next: NextFunction,
 ) => {
+  const userId = req.userId;
+  const image = req.file;
+  const user = await getUserById(userId!);
+  checkUserIfNotExist(user);
   res.status(200).json({ message: "Profile picture uploaded successfully." });
 };
