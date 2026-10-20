@@ -142,7 +142,46 @@ export const uploadProfileOptimize = async (
   const user = await getUserById(userId!);
   checkUserIfNotExist(user);
   checkUploadFile(image);
+
+  const fileName = Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
+
+  try {
+    const optimizedImagePath = path.join(
+      __dirname,
+      "../../..",
+      "/uploads/images",
+      fileName,
+    );
+    await sharp(req.file?.buffer)
+      .resize(200, 200)
+      .webp({ quality: 50 })
+      .toFile(optimizedImagePath);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Image optimization failed." });
+    return;
+  }
+
+  if (user?.image) {
+    try {
+      const filePath = path.join(
+        __dirname,
+        "../../..",
+        "uploads/images",
+        user!.image!,
+      );
+      await unlink(filePath);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  const userData= {
+    image:fileName,
+  };
+  await updateUser(user?.id!,userData);
+
   res.status(200).json({
     message: "Profile picture uploaded successfully.",
+    image: fileName,
   });
 };
