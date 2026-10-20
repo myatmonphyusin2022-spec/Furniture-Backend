@@ -17,7 +17,7 @@ router.use(
   authorise(true, "ADMIN"),
   adminRoutes,
 );
-router.use("/api/v1/user", maintenance, userRoutes);
+router.use("/api/v1/users", maintenance, userRoutes);
 
 // router.use("/api/v1/auth", authRoutes);
 // router.use("/api/v1/admins", auth, authorise(true, "ADMIN"), adminRoutes);

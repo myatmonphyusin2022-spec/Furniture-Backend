@@ -8,7 +8,7 @@ import { title } from "node:process";
 import { authorise } from "../../middlewares/authorise";
 import { getUserById, updateUser } from "../../services/authService";
 import { checkUserIfNotExist } from "../../utils/auth";
-
+import { error } from "node:console";
 interface CustomRequest extends Request {
   userId?: number;
   file?: any;
@@ -76,7 +76,7 @@ export const uploadProfile = async (
   const user = await getUserById(userId!);
   checkUserIfNotExist(user);
 
-  // console.log("Image-----",image);
+  console.log("Image-----", image);
 
   // const filePath = image!.path;
   // const filePath = image!.path.replace("\\","/");
@@ -103,5 +103,30 @@ export const uploadProfile = async (
   res.status(200).json({
     message: "Profile picture uploaded successfully.",
     image: fileName,
+  });
+};
+export const getMyPhoto = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  const file = path.join(
+    __dirname,
+    "../../..",
+    "/uploads/images",
+    "1792480627930-51681836-photo_6174882028172985390_x.jpg",
+  );
+  res.sendFile(file, (err) => {
+    res.status(404).send("File not found");
+  });
+};
+export const uploadProfileMultiple = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.log("req.files -------", req.files);
+  res.status(200).json({
+    message: "Multiple Profile pictures uploaded successfully.",
   });
 };
