@@ -4,17 +4,30 @@ import {
   uploadProfile,
   testPermission,
   getMyPhoto,
-  uploadProfileMultiple
+  uploadProfileMultiple,
+  uploadProfileOptimize,
 } from "../../controllers/api/profileController";
 import { auth } from "../../middlewares/auth";
-import upload from "../../middlewares/uploadFiles";
+import upload, { uploadMemory } from "../../middlewares/uploadFiles";
 
 const router = express.Router();
 
 router.post("/change-language", changeLanguage);
 router.get("/test-permission", auth, testPermission);
+router.get("/profile/my-photo", auth, getMyPhoto); // <-- Added `auth` middleware here
+
 router.patch("/profile/upload", auth, upload.single("avatar"), uploadProfile);
-router.patch("/profile/upload/multiple",auth,upload.array ("avatar"),uploadProfileMultiple)
-router.get("/profile/my-photo",getMyPhoto);
+router.patch(
+  "/profile/upload/multiple",
+  auth,
+  upload.array("avatar"),
+  uploadProfileMultiple,
+);
+router.patch(
+  "/profile/upload/optimize",
+  auth,
+  uploadMemory.single("avatar"),
+  uploadProfileOptimize,
+);
 
 export default router;

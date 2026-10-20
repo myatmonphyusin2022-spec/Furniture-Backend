@@ -46,7 +46,8 @@
     "morgan": "^1.11.0",
     "multer": "^2.4.0",
     "node-cron": "^4.6.0",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",

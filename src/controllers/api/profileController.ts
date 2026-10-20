@@ -9,6 +9,8 @@ import { authorise } from "../../middlewares/authorise";
 import { getUserById, updateUser } from "../../services/authService";
 import { checkUserIfNotExist } from "../../utils/auth";
 import { error } from "node:console";
+import { checkUploadFile } from "../../utils/check";
+import sharp from "sharp";
 interface CustomRequest extends Request {
   userId?: number;
   file?: any;
@@ -128,5 +130,19 @@ export const uploadProfileMultiple = async (
   console.log("req.files -------", req.files);
   res.status(200).json({
     message: "Multiple Profile pictures uploaded successfully.",
+  });
+};
+export const uploadProfileOptimize = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  const userId = req.userId;
+  const image = req.file;
+  const user = await getUserById(userId!);
+  checkUserIfNotExist(user);
+  checkUploadFile(image);
+  res.status(200).json({
+    message: "Profile picture uploaded successfully.",
   });
 };
