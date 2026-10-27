@@ -3,7 +3,7 @@ import { getSettingStatus } from "../services/settingService";
 import { errorCode } from "../config/errorCode";
 import { createError } from "../utils/error";
 
-const whiteLists = ["127.0.0.1"];
+const whiteLists = ["127.0.0.1", "::1", "::ffff:127.0.0.1"];
 
 export const maintenance = async (
   req: Request,

@@ -6,15 +6,15 @@ import {
   getMyPhoto,
   uploadProfileMultiple,
   uploadProfileOptimize,
-} from "../../controllers/api/profileController";
-import { auth } from "../../middlewares/auth";
-import upload, { uploadMemory } from "../../middlewares/uploadFiles";
+} from "../../controllers/api/profileController"; // Folder တစ်ဆင့်ပဲ တက်ရန်
+import { auth } from "../../middlewares/auth"; // Folder တစ်ဆင့်ပဲ တက်ရန်
+import upload, { uploadMemory } from "../../middlewares/uploadFiles"; // Folder တစ်ဆင့်ပဲ တက်ရန်
 
 const router = express.Router();
 
 router.post("/change-language", changeLanguage);
 router.get("/test-permission", auth, testPermission);
-router.get("/profile/my-photo", auth, getMyPhoto); // <-- Added `auth` middleware here
+router.get("/profile/my-photo", auth, getMyPhoto);
 
 router.patch("/profile/upload", auth, upload.single("avatar"), uploadProfile);
 router.patch(
