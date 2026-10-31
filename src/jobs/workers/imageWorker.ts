@@ -7,28 +7,32 @@ import path from "path";
 const connection = new Redis({
   host: process.env.REDIS_HOST,
   port: 6379,
-  maxRetriesPerRequest: null, // <-- Required fix
+  maxRetriesPerRequest: null,
 });
 
 // Create a worker to process the image optimization job
 const imageWorker = new Worker(
   "imageQueue",
   async (job) => {
-    const { filePath, fileName } = job.data;
+    // Controller မှ buffer ပို့ထားသောကြောင့် buffer ကို လက်ခံရန်
+    const { buffer, fileName, width, height, quality } = job.data;
 
     // Define the path where the optimized image will be saved
     const optimizedImagePath = path.join(
       __dirname,
       "../../..",
-      "uploads", // removed leading slash to prevent absolute path resolution issues on Windows
+      "uploads",
       "optimize",
       fileName,
     );
 
+    // BullMQ မှတဆင့် လာသော buffer ကို Node.js Buffer အဖြစ် အသစ်ပြန်ဆောက်ပါ
+    const imageBuffer = Buffer.from(buffer.data);
+
     // Process the image using Sharp: resize, convert to WebP, and save to file
-    await sharp(filePath)
-      .resize(200, 200)
-      .webp({ quality: 50 })
+    await sharp(imageBuffer)
+      .resize(width || 200, height || 200)
+      .webp({ quality: quality || 50 })
       .toFile(optimizedImagePath);
   },
   { connection },
@@ -41,5 +45,5 @@ imageWorker.on("completed", (job) => {
 
 // Event listener for failed jobs
 imageWorker.on("failed", (job: any, err) => {
-  console.error(`Job ${job.id} failed with error: ${err.message}`);
+  console.error(`Job ${job?.id} failed with error: ${err.message}`);
 });
