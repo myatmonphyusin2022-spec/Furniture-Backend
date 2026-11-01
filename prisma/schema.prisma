@@ -138,19 +138,19 @@ model Setting {
   value String @db.VarChar(200)
 }
 
-model Tag {
-  id       Int        @id @default(autoincrement())
-  name     String     @db.VarChar(52)
-  Taggable Taggable[]
-}
+// model Tag {
+//   id       Int        @id @default(autoincrement())
+//   name     String     @db.VarChar(52)
+//   Taggable Taggable[]
+// }
 
-model Taggable {
-  id     Int    @id @default(autoincrement())
-  tagId  Int
-  type   String @db.VarChar(7)
-  typeId Int
-  Tag    Tag    @relation(fields: [tagId], references: [id])
-}
+// model Taggable {
+//   id     Int    @id @default(autoincrement())
+//   tagId  Int
+//   type   String @db.VarChar(7)
+//   typeId Int
+//   Tag    Tag    @relation(fields: [tagId], references: [id])
+// }
 
 enum Role {
   USER
