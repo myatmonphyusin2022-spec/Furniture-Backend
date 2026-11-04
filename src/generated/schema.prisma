@@ -27,10 +27,10 @@ model Order {
 
 model Otp {
   id            Int      @id @default(autoincrement())
-  phone         String   @unique @db.VarChar(20) // 🟢 ဖုန်းနံပါတ်အတွက် ရာခိုင်နှုန်းစိတ်ချရအောင် 20 သို့ တိုးထားပါ
+  phone         String   @unique @db.VarChar(20)
   otp           String
-  rememberToken String   @db.Text // 🟢 Token အရှည်ကြီးတွေ ဝင်နိုင်အောင် Text ပြောင်းပါ
-  verifyToken   String?  @db.Text // 🟢 Text သို့ ပြောင်းပါ
+  rememberToken String   @db.Text
+  verifyToken   String?  @db.Text
   count         Int      @default(0) @db.SmallInt
   error         Int      @default(0) @db.SmallInt
   createdAt     DateTime @default(now())
@@ -136,20 +136,6 @@ model Setting {
   id    Int    @id @default(autoincrement())
   key   String @unique @db.VarChar(50)
   value String @db.VarChar(200)
-}
-
-model Tag {
-  id       Int        @id @default(autoincrement())
-  name     String     @db.VarChar(52)
-  Taggable Taggable[]
-}
-
-model Taggable {
-  id     Int    @id @default(autoincrement())
-  tagId  Int
-  type   String @db.VarChar(7)
-  typeId Int
-  Tag    Tag    @relation(fields: [tagId], references: [id])
 }
 
 enum Role {

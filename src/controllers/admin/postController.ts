@@ -7,6 +7,8 @@ import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
 import ImageQueue from "../../jobs/queues/imageQueue";
 import { PostArgs } from "../../services/postService";
+import { createOnePost } from "../../services/postService";
+import sanitizeHtml from "sanitize-html";
 interface CustomRequest extends Request {
   userId?: number;
 }
@@ -14,7 +16,7 @@ interface CustomRequest extends Request {
 export const createPost = [
   body("title", "Title is required").trim().notEmpty().escape(),
   body("content", "Content is required").trim().notEmpty().escape(),
-  body("body", "Body is required").trim().notEmpty().escape(),
+  body("body", "Body is required").trim().notEmpty().customSanitizer((value) => sanitizeHtml(value)).notEmpty(),
   body("category", "Category is required").trim().notEmpty().escape(),
   body("type", "Type is required").trim().notEmpty().escape(),
   body("tags", "Tag is invalid")
@@ -65,7 +67,10 @@ export const createPost = [
       type,
       tags,
     };
-    res.status(200).json({ message: "OK" });
+    const post = await createOnePost(data);
+    res
+      .status(201)
+      .json({ message: "Successfully created a post.", postId: post.id });
   },
 ];
 export const updatePost = [
