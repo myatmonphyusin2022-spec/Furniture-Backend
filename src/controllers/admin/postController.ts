@@ -6,6 +6,7 @@ import { checkUploadFile } from "../../utils/check";
 import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
 import ImageQueue from "../../jobs/queues/imageQueue";
+import { PostArgs } from "../../services/postService";
 interface CustomRequest extends Request {
   userId?: number;
 }
@@ -54,6 +55,16 @@ export const createPost = [
         },
       },
     );
+    const data: PostArgs = {
+      title,
+      content,
+      body,
+      image: req.file!.filename,
+      authorId: user!.id,
+      category,
+      type,
+      tags,
+    };
     res.status(200).json({ message: "OK" });
   },
 ];
