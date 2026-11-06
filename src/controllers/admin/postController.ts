@@ -6,7 +6,12 @@ import { checkUploadFile } from "../../utils/check";
 import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
 import ImageQueue from "../../jobs/queues/imageQueue";
-import { PostArgs, createOnePost } from "../../services/postService";
+import {
+  PostArgs,
+  createOnePost,
+  getPostById,
+  updateOnePost
+} from "../../services/postService";
 import sanitizeHtml from "sanitize-html";
 import { unlink } from "fs/promises";
 import path from "path";
@@ -131,13 +136,104 @@ export const createPost = [
 ];
 
 export const updatePost = [
+  body("postId", "PostId is required").trim().notEmpty().isInt({ min: 1 }),
+  body("title", "Title is required").trim().notEmpty().escape(),
+  body("content", "Content is required").trim().notEmpty().escape(),
+  body("body", "Body is required")
+    .trim()
+    .notEmpty()
+    .customSanitizer((value) => sanitizeHtml(value))
+    .notEmpty(),
+  body("category", "Category is required").trim().notEmpty().escape(),
+  body("type", "Type is required").trim().notEmpty().escape(),
+  body("tags", "Tag is invalid")
+    .optional({ nullable: true })
+    .customSanitizer((value) => {
+      if (value) {
+        return value.split(",").filter((tag: string) => tag.trim() !== "");
+      }
+    }),
+
   // TODO: Update validators for updating a post instead of phone number
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
     if (errors.length > 0) {
+      if (req.file) {
+        await removeFiles(req.file.filename, null);
+      }
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
-    res.status(200).json({ message: "Post updated successfully" });
+
+    const { postId, title, content, body, category, type, tags } = req.body;
+    const userId = req.userId;
+
+    checkUploadFile(req.file);
+    const user = await getUserById(userId!);
+    if (!user) {
+      if (req.file) {
+        await removeFiles(req.file.filename, null);
+      }
+      return next(
+        createError(
+          "This user is not registered",
+          401,
+          errorCode.unauthenticated,
+        ),
+      );
+    }
+    const post = await getPostById(+postId);
+    if (!post) {
+      if (req.file) {
+        await removeFiles(req.file.filename, null);
+      }
+      return next(
+        createError("This data model does not exist", 401, errorCode.invalid),
+      );
+    }
+    if (post.authorId !== user.id) {
+      if (req.file) {
+        await removeFiles(req.file.filename, null);
+      }
+      return next(
+        createError("This action is not allowed", 403, errorCode.unauthorized),
+      );
+    }
+    let data: any = {
+      title,
+      content,
+      body,
+      image: req.file,
+      category,
+      type,
+      tags,
+    };
+    if (req.file) {
+      data.image = req.file.filename;
+      const splitFileName = req.file.originalname.split(".")[0];
+      const webpFileName = `${splitFileName}-${Date.now()}.webp`;
+
+      await ImageQueue.add(
+        "optimize-image",
+        {
+          buffer: req.file?.path,
+          fileName: webpFileName,
+          width: 835,
+          height: 577,
+          quality: 100,
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 1000,
+          },
+        },
+      );
+    }
+    const optimizeFile = post.image.split(".")[0] + ".webp";
+    await removeFiles(post.image, optimizeFile);
+const postUpdated = await updateOnePost(post.id, data);
+    res.status(200).json({ message: "Successfully updated the post.",postId: postUpdated.id });
   },
 ];
 
