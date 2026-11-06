@@ -2,13 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { body, query, validationResult } from "express-validator";
 import { errorCode } from "../../config/errorCode";
 import { checkUserIfNotExist } from "../../utils/auth";
-import { checkUploadFile } from "../../utils/check";
+import { checkModelIfExists, checkUploadFile } from "../../utils/check";
 import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
 import ImageQueue from "../../jobs/queues/imageQueue";
 import {
   PostArgs,
   createOnePost,
+  deleteOnePost,
   getPostById,
   updateOnePost,
 } from "../../services/postService";
@@ -240,12 +241,32 @@ export const updatePost = [
 ];
 
 export const deletePost = [
+  body("postId", "PostId is required").trim().notEmpty().isInt({ min: 1 }),
   // TODO: Add proper post ID validation params/body checks here
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
     if (errors.length > 0) {
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
-    res.status(200).json({ message: "Post deleted successfully" });
+    const { postId } = req.body;
+    const userId = req.userId;
+    const user = await getUserById(userId!);
+    checkUserIfNotExist(user);
+    const post = await getPostById(+postId);
+    checkModelIfExists(post);
+    if (post!.authorId !== user!.id) {
+      return next(
+        createError("This action is not allowed", 403, errorCode.unauthorized),
+      );
+    }
+    const postDeleted = await deleteOnePost(post!.id);
+    const optimizeFile = post!.image.split(".")[0] + ".webp";
+    await removeFiles(post!.image, optimizeFile);
+    res
+      .status(200)
+      .json({
+        message: "Successfully deleted the post.",
+        postId: postDeleted.id,
+      });
   },
 ];

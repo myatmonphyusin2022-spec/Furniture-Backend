@@ -7,3 +7,11 @@ export const checkUploadFile = (file: any) => {
     throw error;
   }
 };
+export const checkModelIfExists = (model: any) => {
+  if (!model) {
+    const error: any = new Error("This model does not exist.");
+    error.status = 409;
+    error.code = errorCode.invalid;
+    throw error;
+  }
+};
