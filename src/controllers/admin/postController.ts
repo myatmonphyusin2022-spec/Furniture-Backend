@@ -10,7 +10,7 @@ import {
   PostArgs,
   createOnePost,
   getPostById,
-  updateOnePost
+  updateOnePost,
 } from "../../services/postService";
 import sanitizeHtml from "sanitize-html";
 import { unlink } from "fs/promises";
@@ -198,7 +198,7 @@ export const updatePost = [
         createError("This action is not allowed", 403, errorCode.unauthorized),
       );
     }
-    let data: any = {
+    const data: any = {
       title,
       content,
       body,
@@ -232,8 +232,10 @@ export const updatePost = [
     }
     const optimizeFile = post.image.split(".")[0] + ".webp";
     await removeFiles(post.image, optimizeFile);
-const postUpdated = await updateOnePost(post.id, data);
-    res.status(200).json({ message: "Successfully updated the post.",postId: postUpdated.id });
+    const postUpdated = await updateOnePost(post.id, data);
+    res
+      .status(200)
+      .json({ message: "Successfully updated the post.", postId: post.id });
   },
 ];
 
