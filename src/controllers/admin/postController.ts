@@ -241,7 +241,7 @@ export const updatePost = [
 ];
 
 export const deletePost = [
-  body("postId", "PostId is required").trim().notEmpty().isInt({ min: 1 }),
+  body("postId", "PostId is required").trim().notEmpty().isInt({ gt: 0 }),
   // TODO: Add proper post ID validation params/body checks here
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });

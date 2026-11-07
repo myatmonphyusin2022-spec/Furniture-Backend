@@ -9,7 +9,7 @@ import {
 } from "../../controllers/api/profileController"; // Folder တစ်ဆင့်ပဲ တက်ရန်
 import { auth } from "../../middlewares/auth"; // Folder တစ်ဆင့်ပဲ တက်ရန်
 import upload, { uploadMemory } from "../../middlewares/uploadFiles"; // Folder တစ်ဆင့်ပဲ တက်ရန်
-import { getPost, getPostsByPagination } from "../../controllers/api/postController";
+import { getPost, getPostsByPagination,getInfinitePostsByPagination} from "../../controllers/api/postController";
 
 const router = express.Router();
 
@@ -31,6 +31,7 @@ router.patch(
   uploadProfileOptimize,
 );
 router.get("/posts",auth,getPostsByPagination);
+router.get("/posts/infinite",auth,getInfinitePostsByPagination);
 router.get("/posts/:id",auth,getPost);
 
 export default router;
