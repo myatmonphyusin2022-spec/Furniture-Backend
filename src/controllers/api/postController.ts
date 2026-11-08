@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { body, param, query, validationResult } from "express-validator";
+import { param, query, validationResult } from "express-validator";
 import { errorCode } from "../../config/errorCode";
 import { checkUserIfNotExist } from "../../utils/auth";
-import { checkUploadFile } from "../../utils/check";
 import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
-import { getPostById, getPostWithRelations } from "../../services/postService";
+import { getPostList, getPostWithRelations } from "../../services/postService";
+
 interface CustomRequest extends Request {
   userId?: number;
 }
+
 export const getPost = [
   param("id", "Post ID is required").isInt({ gt: 0 }),
   async (req: CustomRequest, res: Response, next: NextFunction) => {
@@ -22,59 +23,76 @@ export const getPost = [
     const user = await getUserById(userId!);
     checkUserIfNotExist(user);
     const post = await getPostWithRelations(+postId);
-    const modifiedPost = {
-      id: post!.id,
-      title: post!.title,
-      content: post!.content,
-      body: post!.body,
-      image: "/optimize/" + post?.image.split(".")[0] + ".webp",
-      updatedAt: post?.updatedAt.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      fullName:
-        (post?.author.firstName ?? "") + " " + (post?.author.lastName ?? ""),
-      category: post?.category.name,
-      type: post?.type.name,
-      tags:
-        post?.tags && post.tags.length > 0
-          ? post.tags.map((i) => i.name)
-          : null,
-    };
-    res.status(200).json({ message: "Post Detail", post: modifiedPost });
+
+    res.status(200).json({ message: "Post Detail", post });
   },
 ];
+// Offset Pagination
 export const getPostsByPagination = [
-  body("phone", "Invalid phone number")
-    .trim()
-    .notEmpty()
-    .matches("^[0-9]+$")
-    .isLength({ min: 5, max: 12 }),
+  query("page", "Page number must be a positive integer")
+    .isInt({ gt: 0 })
+    .optional(),
+  query("limit", "Limit must be a positive integer")
+    .isInt({ gt: 2 })
+    .optional(),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
     if (errors.length > 0) {
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
-    const { phone, password, token } = req.body;
-    res.status(200).json({ message: "OK" });
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 3;
+
+    const userId = req.userId;
+    const user = await getUserById(userId!);
+    checkUserIfNotExist(user);
+
+    const skip = (+page - 1) * +limit; //2-1 *5
+    const options = {
+      skip,
+      take: +limit + 1,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        image: true,
+        updatedAt: true,
+        author: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+      orderBy:{
+        updatedAt:"desc",
+      }
+    };
+const posts = await getPostList(options);
+
+const hasNextPage = posts.length > +limit;
+let nextPage = null;
+const previousPage = +page !== 1 ? +page-1 : null;
+if(hasNextPage){
+  posts.pop();
+  nextPage = +page + 1;
+}
+    res.status(200).json({ message: "Get All Posts.", currentPage: page, hasNextPage, nextPage, previousPage, posts });
   },
 ];
 
 export const getInfinitePostsByPagination = [
-  body("phone", "Invalid phone number")
-    .trim()
-    .notEmpty()
-    .matches("^[0-9]+$")
-    .isLength({ min: 5, max: 12 }),
+  query("cursor", "Cursor must be a valid identifier").optional(),
+  query("limit", "Limit must be a positive integer")
+    .isInt({ gt: 0 })
+    .optional(),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
     if (errors.length > 0) {
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
-    const { phone, password, token } = req.body;
-    res.status(200).json({ message: "OK" });
+    const { cursor, limit } = req.query;
+    res.status(200).json({ message: "Infinite Pagination OK", cursor, limit });
   },
 ];

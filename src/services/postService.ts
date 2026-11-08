@@ -1,13 +1,4 @@
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated"; // Or '../generated/prisma/client'
-
-// Initialize the PostgreSQL pool and driver adapter required by Prisma v7
-const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "./prismaClient";
 
 export type PostArgs = {
   title: string;
@@ -17,9 +8,8 @@ export type PostArgs = {
   authorId: number;
   category: string;
   type: string;
-  tags?: string[];
+  tags: string[];
 };
-
 export const createOnePost = async (postData: PostArgs) => {
   const data: any = {
     title: postData.title,
@@ -32,13 +22,17 @@ export const createOnePost = async (postData: PostArgs) => {
     category: {
       connectOrCreate: {
         where: { name: postData.category },
-        create: { name: postData.category },
+        create: {
+          name: postData.category,
+        },
       },
     },
     type: {
       connectOrCreate: {
         where: { name: postData.type },
-        create: { name: postData.type },
+        create: {
+          name: postData.type,
+        },
       },
     },
   };
@@ -47,62 +41,75 @@ export const createOnePost = async (postData: PostArgs) => {
     data.tags = {
       connectOrCreate: postData.tags.map((tagName) => ({
         where: { name: tagName },
-        create: { name: tagName },
+        create: {
+          name: tagName,
+        },
       })),
     };
   }
-
-  return await prisma.post.create({ data });
+  return prisma.post.create({ data });
 };
+
 export const getPostById = async (id: number) => {
   return prisma.post.findUnique({
-    where: { id: id },
+    where: { id },
   });
 };
+
 export const updateOnePost = async (postId: number, postData: PostArgs) => {
   const data: any = {
     title: postData.title,
     content: postData.content,
     body: postData.body,
-
     category: {
       connectOrCreate: {
         where: { name: postData.category },
-        create: { name: postData.category },
+        create: {
+          name: postData.category,
+        },
       },
     },
     type: {
       connectOrCreate: {
         where: { name: postData.type },
-        create: { name: postData.type },
+        create: {
+          name: postData.type,
+        },
       },
     },
   };
+
   if (postData.image) {
     data.image = postData.image;
   }
+
   if (postData.tags && postData.tags.length > 0) {
     data.tags = {
+      set: [],
       connectOrCreate: postData.tags.map((tagName) => ({
         where: { name: tagName },
-        create: { name: tagName },
+        create: {
+          name: tagName,
+        },
       })),
     };
   }
+
   return prisma.post.update({
     where: { id: postId },
     data,
   });
 };
-export const deleteOnePost = async (postId: number) => {
+
+export const deleteOnePost = async (id: number) => {
   return prisma.post.delete({
-    where: { id: postId },
+    where: { id },
   });
 };
-export const getPostWithRelations = async (postId: number) => {
+
+export const getPostWithRelations = async (id: number) => {
   return prisma.post.findUnique({
-    where: { id: postId },
-    // omit: { createdAt: true, updatedAt: true },
+    where: { id },
     select: {
       id: true,
       title: true,
@@ -112,8 +119,9 @@ export const getPostWithRelations = async (postId: number) => {
       updatedAt: true,
       author: {
         select: {
-          firstName: true,
-          lastName: true,
+          // firstName: true,
+          // lastName: true,
+          fullName: true,
         },
       },
       category: {
@@ -133,4 +141,8 @@ export const getPostWithRelations = async (postId: number) => {
       },
     },
   });
+};
+
+export const getPostList = async (options: any) => {
+  return prisma.post.findMany(options);
 };
