@@ -33,7 +33,7 @@ export const getPostsByPagination = [
     .isInt({ gt: 0 })
     .optional(),
   query("limit", "Limit must be a positive integer")
-    .isInt({ gt: 2 })
+    .isInt({ gt: 4 })
     .optional(),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
@@ -42,7 +42,7 @@ export const getPostsByPagination = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
     const page = req.query.page || 1;
-    const limit = req.query.limit || 3;
+    const limit = req.query.limit || 5;
 
     const userId = req.userId;
     const user = await getUserById(userId!);
@@ -64,27 +64,37 @@ export const getPostsByPagination = [
           },
         },
       },
-      orderBy:{
-        updatedAt:"desc",
-      }
+      orderBy: {
+        updatedAt: "desc",
+      },
     };
-const posts = await getPostList(options);
+    const posts = await getPostList(options);
 
-const hasNextPage = posts.length > +limit;
-let nextPage = null;
-const previousPage = +page !== 1 ? +page-1 : null;
-if(hasNextPage){
-  posts.pop();
-  nextPage = +page + 1;
-}
-    res.status(200).json({ message: "Get All Posts.", currentPage: page, hasNextPage, nextPage, previousPage, posts });
+    const hasNextPage = posts.length > +limit;
+    let nextPage = null;
+    const previousPage = +page !== 1 ? +page - 1 : null;
+    if (hasNextPage) {
+      posts.pop();
+      nextPage = +page + 1;
+    }
+    res.status(200).json({
+      message: "Get All Posts.",
+      currentPage: page,
+      hasNextPage,
+      nextPage,
+      previousPage,
+      posts,
+    });
   },
 ];
 
+// Cursor based Pagination
 export const getInfinitePostsByPagination = [
-  query("cursor", "Cursor must be a valid identifier").optional(),
-  query("limit", "Limit must be a positive integer")
+  query("page", "Page number must be a positive integer")
     .isInt({ gt: 0 })
+    .optional(),
+  query("limit", "Limit must be a positive integer")
+    .isInt({ gt: 4 })
     .optional(),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
@@ -92,7 +102,52 @@ export const getInfinitePostsByPagination = [
     if (errors.length > 0) {
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
-    const { cursor, limit } = req.query;
-    res.status(200).json({ message: "Infinite Pagination OK", cursor, limit });
+
+    const lastCursor = req.query.cursor;
+    const limit = req.query.limit || 5;
+
+    const userId = req.userId;
+    const user = await getUserById(userId!);
+    checkUserIfNotExist(user);
+
+    const options = {
+      take: +limit + 1,
+      skip: lastCursor ? 1 : 0,
+      cursor: lastCursor ? { id: +lastCursor } : undefined,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        image: true,
+        updatedAt: true,
+        author: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    };
+    const posts = await getPostList(options);
+
+    const hasNextPage = posts.length > +limit;
+    if (hasNextPage) {
+      posts.pop();
+    }
+    const newCursor = posts.length
+      ? 0
+        ? posts[posts.length - 1].id
+        : null
+      : null;
+    res
+      .status(200)
+      .json({
+        message: "Get All Infinite Posts",
+       hasNextPage,
+        newCursor,
+        posts,
+      });
   },
 ];
