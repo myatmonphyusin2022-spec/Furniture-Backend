@@ -1,14 +1,7 @@
 import { Worker } from "bullmq";
-import { Redis } from "ioredis";
+import { redis } from "../../config/redisClient";
 import sharp from "sharp";
 import path from "path";
-
-// Initialize Redis connection with maxRetriesPerRequest set to null (required by BullMQ)
-const connection = new Redis({
-  host: process.env.REDIS_HOST,
-  port: 6379,
-  maxRetriesPerRequest: null,
-});
 
 // Create a worker to process the image optimization job
 const imageWorker = new Worker(
@@ -35,7 +28,7 @@ const imageWorker = new Worker(
       .webp({ quality: quality || 50 })
       .toFile(optimizedImagePath);
   },
-  { connection },
+  { connection: redis },
 );
 
 // Event listener for successfully completed jobs
