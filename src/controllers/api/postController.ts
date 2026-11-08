@@ -5,6 +5,7 @@ import { checkUserIfNotExist } from "../../utils/auth";
 import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
 import { getPostList, getPostWithRelations } from "../../services/postService";
+import { getOrSetCache } from "../../utils/cache";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -22,9 +23,17 @@ export const getPost = [
 
     const user = await getUserById(userId!);
     checkUserIfNotExist(user);
-    const post = await getPostWithRelations(+postId);
 
-    res.status(200).json({ message: "Post Detail", post });
+    //const post = await getPostWithRelations(+postId);
+    const cacheKey = `posts:${postId}:${JSON.stringify(req.query)}`;
+    const post = await getOrSetCache(cacheKey, async () => {
+      return await getPostWithRelations(+postId);
+    });
+
+    res.status(200).json({
+      message: "Post Detail",
+      post,
+    });
   },
 ];
 // Offset Pagination
@@ -68,7 +77,10 @@ export const getPostsByPagination = [
         updatedAt: "desc",
       },
     };
-    const posts = await getPostList(options);
+    const cachKey = `posts:${JSON.stringify(req.query)}`;
+    const posts = await getOrSetCache(cachKey, async () => {
+      return await getPostList(options);
+    });
 
     const hasNextPage = posts.length > +limit;
     let nextPage = null;
@@ -130,7 +142,11 @@ export const getInfinitePostsByPagination = [
         id: "asc",
       },
     };
-    const posts = await getPostList(options);
+
+    const cachKey = `posts:${JSON.stringify(req.query)}`;
+    const posts = await getOrSetCache(cachKey, async () => {
+      return await getPostList(options);
+    });
 
     const hasNextPage = posts.length > +limit;
     if (hasNextPage) {
@@ -141,13 +157,11 @@ export const getInfinitePostsByPagination = [
         ? posts[posts.length - 1].id
         : null
       : null;
-    res
-      .status(200)
-      .json({
-        message: "Get All Infinite Posts",
-       hasNextPage,
-        newCursor,
-        posts,
-      });
+    res.status(200).json({
+      message: "Get All Infinite Posts",
+      hasNextPage,
+      newCursor,
+      posts,
+    });
   },
 ];
