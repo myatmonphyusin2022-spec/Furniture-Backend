@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 import { redis } from "../../config/redisClient";
 
 export const cacheWorker = new Worker(
-  "cache-invalidation", // Fixed typo: "invalidaion" -> "invalidation"
+  "cache-invalidation", 
   async (job) => {
     const { pattern } = job.data;
     await invalidateCache(pattern);
