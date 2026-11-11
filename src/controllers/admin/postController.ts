@@ -20,6 +20,7 @@ import cacheQueue from "../../jobs/queues/cachQueue";
 
 interface CustomRequest extends Request {
   userId?: number;
+  user?: any;
 }
 
 const removeFiles = async (
@@ -79,22 +80,23 @@ export const createPost = [
     }
 
     const { title, content, body, category, type, tags } = req.body;
-    const userId = req.userId;
+    // const userId = req.userId;
+    const user = req.user;
     const image = req.file;
     checkUploadFile(image);
-    const user = await getUserById(userId!);
-    if (!user) {
-      if (req.file) {
-        await removeFiles(req.file.filename, null);
-      }
-      return next(
-        createError(
-          "This user is not registered",
-          401,
-          errorCode.unauthenticated,
-        ),
-      );
-    }
+    //const user = await getUserById(userId!);
+    // if (!user) {
+    //   if (req.file) {
+    //     await removeFiles(req.file.filename, null);
+    //   }
+    //   return next(
+    //     createError(
+    //       "This user is not registered",
+    //       401,
+    //       errorCode.unauthenticated,
+    //     ),
+    //   );
+    // }
 
     const splitFileName = image?.originalname.split(".");
     const webpFileName = `${splitFileName?.[0]}-${Date.now()}.webp`;
@@ -177,22 +179,23 @@ export const updatePost = [
     }
 
     const { postId, title, content, body, category, type, tags } = req.body;
-    const userId = req.userId;
+    const user = req.user;
+    // const userId = req.userId;
 
-    checkUploadFile(req.file);
-    const user = await getUserById(userId!);
-    if (!user) {
-      if (req.file) {
-        await removeFiles(req.file.filename, null);
-      }
-      return next(
-        createError(
-          "This user is not registered",
-          401,
-          errorCode.unauthenticated,
-        ),
-      );
-    }
+    // checkUploadFile(req.file);
+    // const user = await getUserById(userId!);
+    // if (!user) {
+    //   if (req.file) {
+    //     await removeFiles(req.file.filename, null);
+    //   }
+    //   return next(
+    //     createError(
+    //       "This user is not registered",
+    //       401,
+    //       errorCode.unauthenticated,
+    //     ),
+    //   );
+    // }
     const post = await getPostById(+postId);
     if (!post) {
       if (req.file) {
@@ -270,16 +273,21 @@ export const deletePost = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
     const { postId } = req.body;
-    const userId = req.userId;
-    const user = await getUserById(userId!);
-    checkUserIfNotExist(user);
+
+    const user = req.user;
+    // const userId = req.userId;
+    // const user = await getUserById(userId!);
+    // checkUserIfNotExist(user);
+
     const post = await getPostById(+postId);
     checkModelIfExists(post);
+
     if (post!.authorId !== user!.id) {
       return next(
         createError("This action is not allowed", 403, errorCode.unauthorized),
       );
     }
+
     const postDeleted = await deleteOnePost(post!.id);
     const optimizeFile = post!.image.split(".")[0] + ".webp";
     await removeFiles(post!.image, optimizeFile);
@@ -293,6 +301,7 @@ export const deletePost = [
         priority: 1,
       },
     );
+
     res.status(200).json({
       message: "Successfully deleted the post.",
       postId: postDeleted.id,

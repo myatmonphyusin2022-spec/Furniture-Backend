@@ -8,6 +8,7 @@ import {
   deletePost,
 } from "../../controllers/admin/postController";
 import { getPostsByPagination } from "../../controllers/api/postController";
+import { createProduct } from "../../controllers/admin/productController";
 const router = express.Router();
 
 router.get("/users", getAllUsers);
@@ -18,4 +19,8 @@ router.post("/posts", upload.single("image"), createPost);
 router.patch("/posts", upload.single("image"), updatePost);
 router.delete("/posts", deletePost);
 
+// CRUD for products
+router.post("/products", upload.array("images,4"), createProduct);
+// router.patch("/products", upload.array("images"), updateProduct);
+// router.delete("/products", deleteProduct);
 export default router;
