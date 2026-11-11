@@ -9,6 +9,8 @@ import {
 } from "../../controllers/admin/postController";
 import { getPostsByPagination } from "../../controllers/api/postController";
 import { createProduct } from "../../controllers/admin/productController";
+import { AnyCnameRecord } from "node:dns";
+
 const router = express.Router();
 
 router.get("/users", getAllUsers);
@@ -20,7 +22,5 @@ router.patch("/posts", upload.single("image"), updatePost);
 router.delete("/posts", deletePost);
 
 // CRUD for products
-router.post("/products", upload.array("images,4"), createProduct);
-// router.patch("/products", upload.array("images"), updateProduct);
-// router.delete("/products", deleteProduct);
+router.post("/products", upload.any(), createProduct as any);
 export default router;

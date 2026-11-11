@@ -7,8 +7,8 @@ import path from "path";
 const imageWorker = new Worker(
   "imageQueue",
   async (job) => {
-    // Controller မှ buffer ပို့ထားသောကြောင့် buffer ကို လက်ခံရန်
-    const { buffer, fileName, width, height, quality } = job.data;
+    // Controller မှ ပို့လိုက်သော filePath နဲ့ အခြား အချက်အလက်များကို လက်ခံရန်
+    const { filePath, fileName, width, height, quality } = job.data;
 
     // Define the path where the optimized image will be saved
     const optimizedImagePath = path.join(
@@ -19,11 +19,8 @@ const imageWorker = new Worker(
       fileName,
     );
 
-    // BullMQ မှတဆင့် လာသော buffer ကို Node.js Buffer အဖြစ် အသစ်ပြန်ဆောက်ပါ
-    const imageBuffer = Buffer.from(buffer.data);
-
-    // Process the image using Sharp: resize, convert to WebP, and save to file
-    await sharp(imageBuffer)
+    // Sharp ကိုသုံးပြီး ဒေသတွင်း ဖိုင်လမ်းကြောင်း (filePath) မှတစ်ဆင့် တိုက်ရိုက် Process လုပ်ပါ
+    await sharp(filePath)
       .resize(width || 200, height || 200)
       .webp({ quality: quality || 50 })
       .toFile(optimizedImagePath);

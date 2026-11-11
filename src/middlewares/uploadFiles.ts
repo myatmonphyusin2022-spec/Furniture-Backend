@@ -33,7 +33,7 @@ const fileFilter = (
 const upload = multer({
   storage: fileStorage,
   fileFilter,
-  limits: { fileSize: 1024 * 1024 * 10 }, // 10MB (တစ်ကြောင်းတည်းဖြင့် မှန်ကန်စွာ ရေးသားရန်)
+  limits: { fileSize: 1024 * 1024 * 10 }, // 10MB
 });
 
 export const uploadMemory = multer({

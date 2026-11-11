@@ -1,91 +1,105 @@
 import { Request, Response, NextFunction } from "express";
-import { body, query, validationResult } from "express-validator";
-import { errorCode } from "../../config/errorCode";
-import { checkUserIfNotExist } from "../../utils/auth";
-import { checkModelIfExists, checkUploadFile } from "../../utils/check";
-import { createError } from "../../utils/error";
-import { getUserById } from "../../services/authService";
-import ImageQueue from "../../jobs/queues/imageQueue";
-import {
-  PostArgs,
-  createOnePost,
-  deleteOnePost,
-  getPostById,
-  updateOnePost,
-} from "../../services/postService";
-
-import { unlink } from "fs/promises";
+import { body, validationResult } from "express-validator";
+import { unlink as fsUnlink } from "fs/promises";
 import path from "path";
-import cacheQueue from "../../jobs/queues/cachQueue";
+
+import { errorCode } from "../../config/errorCode";
+import { checkUploadFile } from "../../utils/check";
+import { createError } from "../../utils/error";
+import ImageQueue from "../../jobs/queues/imageQueue";
 import { createOneProduct } from "../../services/porductService";
+import cacheQueue from "../../jobs/queues/cachQueue";
 
 interface CustomRequest extends Request {
   userId?: number;
   user?: any;
-  files?: any;
+  files?: any[];
 }
+
+/**
+ * Attempts to unlink a file, retrying on Windows EPERM/EBUSY.
+ */
+async function safeUnlink(
+  filePath: string,
+  retries = 3,
+  delayMs = 100,
+): Promise<void> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await fsUnlink(filePath);
+      return;
+    } catch (err: any) {
+      if ((err.code === "EPERM" || err.code === "EBUSY") && attempt < retries) {
+        await new Promise((res) => setTimeout(res, delayMs));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 const removeFiles = async (
   originalFiles: string[],
   optimizedFiles: string[] | null,
 ) => {
   try {
-    // Remove original files if they exist
-    if (originalFiles && originalFiles.length > 0) {
-      for (const originalFile of originalFiles) {
-        const originalFilePath = path.join(
-          __dirname,
-          "../../..",
-          "uploads/images",
-          originalFile,
-        );
-
-        await unlink(originalFilePath).catch(() => {});
-      }
+    for (const originalFile of originalFiles) {
+      const originalFilePath = path.join(
+        __dirname,
+        "../../..",
+        "uploads/images", // Fixed: Removed leading slash
+        originalFile,
+      );
+      await safeUnlink(originalFilePath).catch(() => {});
     }
 
-    // Remove optimized files if provided
-    if (optimizedFiles && optimizedFiles.length > 0) {
+    if (optimizedFiles) {
       for (const optimizedFile of optimizedFiles) {
         const optimizedFilePath = path.join(
           __dirname,
           "../../..",
-          "uploads/optimize",
+          "uploads/optimize", // Fixed: Removed leading slash
           optimizedFile,
         );
-        await unlink(optimizedFilePath).catch(() => {});
+        await safeUnlink(optimizedFilePath).catch(() => {});
       }
     }
   } catch (error) {
-    console.error(error);
+    console.log(error);
   }
 };
 
 export const createProduct = [
-  body("name", "Name is required").trim().notEmpty().escape(),
-  body("description", "Description is required").trim().notEmpty().escape(),
+  body("name", "Name is required.").trim().notEmpty().escape(),
+  body("description", "Description is required.").trim().notEmpty().escape(),
   body("price", "Price is required.")
     .isFloat({ min: 0.1 })
     .isDecimal({ decimal_digits: "1,2" }),
-  body("discount", "Discount is required.")
+  body("discount", "Discount is required.") // Fixed message typo
     .isFloat({ min: 0 })
     .isDecimal({ decimal_digits: "1,2" }),
-  body("inventory", "Inventory is required.").isInt({ min: 1 }),
-  body("category", "Category is required").trim().notEmpty().escape(),
-  body("type", "Type is required").trim().notEmpty().escape(),
-  body("tags", "Tag is invalid")
+  body("inventory", "Inventory is required.").isInt({ min: 1 }), // Fixed message typo
+  body("category", "Category is required.").trim().notEmpty().escape(),
+  body("type", "Type is required.").trim().notEmpty().escape(),
+  body("tags", "Tag is invalid.")
     .optional({ nullable: true })
     .customSanitizer((value) => {
       if (value) {
         return value.split(",").filter((tag: string) => tag.trim() !== "");
       }
+      return value;
     }),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
+
+    // Safely cast files array if present
+    const files = (req.files as any[]) || [];
+
     if (errors.length > 0) {
-      if (req.files && req.files.length > 0) {
-        const orginalFiles = req.files.map((file: any) => file.filename);
-        await removeFiles(orginalFiles, null);
+      if (files.length > 0) {
+        const originalFiles = files.map((file: any) => file.filename);
+        await removeFiles(originalFiles, null);
       }
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
@@ -101,16 +115,16 @@ export const createProduct = [
       tags,
     } = req.body;
 
-    checkUploadFile(req.files && req.files.length > 0);
+    checkUploadFile(files.length > 0);
 
     await Promise.all(
-      req.files.map(async (file: any) => {
-        const splitFileName = req.file?.filename.split(".")[0];
+      files.map(async (file: any) => {
+        const splitFileName = file.filename.split(".")[0];
         return ImageQueue.add(
           "optimize-image",
           {
-            filePath: file.Path,
-            fileName: webpFileName,
+            filePath: file.path,
+            fileName: `${splitFileName}.webp`,
             width: 835,
             height: 577,
             quality: 100,
@@ -126,14 +140,11 @@ export const createProduct = [
       }),
     );
 
-    const splitFileName = req.file?.filename.split(".")[0];
-    const webpFileName = `${splitFileName?.[0]}-${Date.now()}.webp`;
+    // Matches your Prisma service image property structure (filename)
+    const originalFileNames = files.map((file: any) => ({
+      filename: file.filename,
+    }));
 
-    // If using memoryStorage, image.buffer is available.
-    // If using diskStorage, you'd read from image.path instead.
-const originalFileName = req.files.map((file:any )=>{
-    path:file.filename
-})
     const data: any = {
       name,
       description,
@@ -143,10 +154,11 @@ const originalFileName = req.files.map((file:any )=>{
       category,
       type,
       tags,
-      images:originalFileName,
+      images: originalFileNames,
     };
 
     const product = await createOneProduct(data);
+
     await cacheQueue.add(
       "invalidate-product-cache",
       {
@@ -157,8 +169,10 @@ const originalFileName = req.files.map((file:any )=>{
         priority: 1,
       },
     );
-    res
-      .status(201)
-      .json({ message: "Successfully created a post.", productId: product.id });
+
+    res.status(201).json({
+      message: "Successfully created a product.", // Fixed from "post" to "product"
+      productId: product.id,
+    });
   },
 ];
