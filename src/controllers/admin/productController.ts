@@ -4,11 +4,12 @@ import { unlink as fsUnlink } from "fs/promises";
 import path from "path";
 
 import { errorCode } from "../../config/errorCode";
-import { checkUploadFile } from "../../utils/check";
+import { checkModelIfExists, checkUploadFile } from "../../utils/check";
 import { createError } from "../../utils/error";
 import ImageQueue from "../../jobs/queues/imageQueue";
 import {
   createOneProduct,
+  deleteOneProduct,
   getProductById,
   updateOneProduct,
 } from "../../services/porductService";
@@ -316,5 +317,47 @@ export const updateProduct = [
         ),
       );
     }
+  },
+];
+
+export const deleteProduct = [
+  param("id", "Product Id is required.").isInt({ min: 1 }).toInt(),
+
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
+    }
+
+    // Get ID from params instead of body
+    const productId = req.params.id;
+    const product = await getProductById(+productId);
+    checkModelIfExists(product);
+
+    if (!product) {
+      return; // Ensures TypeScript knows product is defined below
+    }
+
+    const productDeleted = await deleteOneProduct(product.id);
+
+    const productImages = (product as any).images;
+    const orgFiles = Array.isArray(productImages)
+      ? productImages.map((img: any) => img.path)
+      : [];
+    const optFies = Array.isArray(productImages)
+      ? productImages.map((img: any) => img.path.split(".")[0] + ".webp")
+      : [];
+    await removeFiles(orgFiles, optFies);
+
+    await cacheQueue.add(
+      "invalidate-product-cache",
+      { pattern: "products:*" },
+      { jobId: `invalidate-${Date.now()}`, priority: 1 },
+    );
+
+    res.status(200).json({
+      message: "Successfully deleted the product",
+      productId: productDeleted.id,
+    });
   },
 ];

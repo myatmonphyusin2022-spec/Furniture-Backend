@@ -130,3 +130,9 @@ export const updateOneProduct = async (productId: number, data: any) => {
     data: productdata,
   });
 };
+
+export const deleteOneProduct = async (id: number) => {
+  return prisma.product.delete({
+    where: { id },
+  });
+};
