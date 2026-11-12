@@ -7,7 +7,6 @@ import {
   updatePost,
   deletePost,
 } from "../../controllers/admin/postController";
-import { getPostsByPagination } from "../../controllers/api/postController";
 import {
   createProduct,
   updateProduct,
@@ -25,6 +24,6 @@ router.delete("/posts", deletePost);
 
 // CRUD for products
 router.post("/products", upload.any(), createProduct as any);
-router.patch("/products", upload.array("images", 4), updateProduct as any);
+router.patch("/products/:id", upload.array("images", 4), updateProduct as any);
 
 export default router;

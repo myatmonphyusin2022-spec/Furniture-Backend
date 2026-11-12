@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { body, validationResult } from "express-validator";
+import { body, param, validationResult } from "express-validator";
 import { unlink as fsUnlink } from "fs/promises";
 import path from "path";
 
@@ -10,7 +10,9 @@ import ImageQueue from "../../jobs/queues/imageQueue";
 import {
   createOneProduct,
   getProductById,
+  updateOneProduct,
 } from "../../services/porductService";
+
 import cacheQueue from "../../jobs/queues/cachQueue";
 import { invalid } from "moment";
 
@@ -182,19 +184,14 @@ export const createProduct = [
 ];
 
 export const updateProduct = [
-  body("productId", "Product Id is required")
-    .trim()
-    .notEmpty()
-    .isInt({ min: 1 }),
+  // Validate id from URL params instead of body
+  param("id", "Product Id is required").isInt({ min: 1 }).toInt(),
+
   body("name", "Name is required.").trim().notEmpty().escape(),
   body("description", "Description is required.").trim().notEmpty().escape(),
-  body("price", "Price is required.")
-    .isFloat({ min: 0.1 })
-    .isDecimal({ decimal_digits: "1,2" }),
-  body("discount", "Discount is required.")
-    .isFloat({ min: 0 })
-    .isDecimal({ decimal_digits: "1,2" }),
-  body("inventory", "Inventory is required.").isInt({ min: 1 }),
+  body("price", "Price is required.").isFloat({ min: 0.1 }).toFloat(),
+  body("discount", "Discount is required.").isFloat({ min: 0 }).toFloat(),
+  body("inventory", "Inventory is required.").isInt({ min: 1 }).toInt(),
   body("category", "Category is required.").trim().notEmpty().escape(),
   body("type", "Type is required.").trim().notEmpty().escape(),
   body("tags", "Tag is invalid.")
@@ -207,88 +204,117 @@ export const updateProduct = [
     }),
 
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    const errors = validationResult(req).array({ onlyFirstError: true });
+    try {
+      const errors = validationResult(req).array({ onlyFirstError: true });
+      const files = (req.files as any[]) || [];
 
-    // Safely cast files array if present
-    const files = (req.files as any[]) || [];
-
-    if (errors.length > 0) {
-      if (files.length > 0) {
-        const originalFiles = files.map((file: any) => file.filename);
-        await removeFiles(originalFiles, null);
+      if (errors.length > 0) {
+        if (files.length > 0) {
+          const originalFiles = files.map((file: any) => file.filename);
+          await removeFiles(originalFiles, null);
+        }
+        return next(createError(errors[0].msg, 400, errorCode.invalid));
       }
-      return next(createError(errors[0].msg, 400, errorCode.invalid));
-    }
 
-    const {
-      productId,
-      name,
-      description,
-      price,
-      discount,
-      inventory,
-      category,
-      type,
-      tags,
-    } = req.body;
+      // Extract productId from req.params.id
+      const productId = req.params.id;
+      const {
+        name,
+        description,
+        price,
+        discount,
+        inventory,
+        category,
+        type,
+        tags,
+      } = req.body;
 
-    const product = await getProductById(+productId);
-    if (!product) {
-      if (files.length > 0) {
-        const originalFiles = files.map((file: any) => file.filename);
-        await removeFiles(originalFiles, null);
+      const product = await getProductById(+productId);
+      if (!product) {
+        if (files.length > 0) {
+          const originalFiles = files.map((file: any) => file.filename);
+          await removeFiles(originalFiles, null);
+        }
+        return next(
+          createError(
+            "This data model does not exist.",
+            409,
+            errorCode.invalid,
+          ),
+        );
       }
-      return next(
-        createError("This data model does not exist.", 409, errorCode.invalid),
-      );
-    }
 
-    // Fixed object mapping syntax
-    let originalFileNames: any[] = [];
-    if (files.length > 0) {
-      originalFileNames = files.map((file: any) => ({
-        path: file.filename,
-      }));
-    }
+      let originalFileNames: any[] = [];
+      if (files.length > 0) {
+        originalFileNames = files.map((file: any) => ({
+          path: file.filename,
+        }));
+      }
 
-    const data: any = {
-      name,
-      description,
-      price,
-      discount,
-      inventory,
-      category,
-      type,
-      tags,
-      images: originalFileNames,
-    };
-    if (req.files && req.files.length > 0) {
-      await Promise.all(
-        files.map(async (file: any) => {
-          const splitFileName = file.filename.split(".")[0];
-          return ImageQueue.add(
-            "optimize-image",
-            {
-              filePath: file.path,
-              fileName: `${splitFileName}.webp`,
-              width: 835,
-              height: 577,
-              quality: 100,
-            },
-            {
-              attempts: 3,
-              backoff: {
-                type: "exponential",
-                delay: 1000,
+      const data: any = {
+        name,
+        description,
+        price,
+        discount,
+        inventory,
+        category,
+        type,
+        tags,
+      };
+
+      if (files.length > 0) {
+        data.images = originalFileNames;
+
+        await Promise.all(
+          files.map(async (file: any) => {
+            const splitFileName = file.filename.split(".")[0];
+            return ImageQueue.add(
+              "optimize-image",
+              {
+                filePath: file.path,
+                fileName: `${splitFileName}.webp`,
+                width: 835,
+                height: 577,
+                quality: 100,
               },
-            },
-          );
-        }),
+              {
+                attempts: 3,
+                backoff: { type: "exponential", delay: 1000 },
+              },
+            );
+          }),
+        );
+
+        const orgFiles = Array.isArray(product.images)
+          ? product.images.map((img: any) => img.path)
+          : [];
+        const optFies = Array.isArray(product.images)
+          ? product.images.map((img: any) => img.path.split(".")[0] + ".webp")
+          : [];
+        await removeFiles(orgFiles, optFies);
+      }
+
+      const productUpdated = await updateOneProduct(+productId, data);
+
+      await cacheQueue.add(
+        "invalidate-product-cache",
+        { pattern: "products:*" },
+        { jobId: `invalidate-${Date.now()}`, priority: 1 },
+      );
+
+      res.status(200).json({
+        message: "Successfully updated the product.",
+        productId: productUpdated.id,
+      });
+    } catch (error: any) {
+      console.error("Update Product Error:", error);
+      return next(
+        createError(
+          error.message || "Internal Server Error",
+          500,
+          errorCode.invalid,
+        ),
       );
     }
-
-    //Deleting Old images
-
-    res.status(200).json({ message: "Product updated successfully.", data });
   },
 ];
