@@ -7,8 +7,12 @@ import { errorCode } from "../../config/errorCode";
 import { checkUploadFile } from "../../utils/check";
 import { createError } from "../../utils/error";
 import ImageQueue from "../../jobs/queues/imageQueue";
-import { createOneProduct } from "../../services/porductService";
+import {
+  createOneProduct,
+  getProductById,
+} from "../../services/porductService";
 import cacheQueue from "../../jobs/queues/cachQueue";
+import { invalid } from "moment";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -174,5 +178,117 @@ export const createProduct = [
       message: "Successfully created a product.", // Fixed from "post" to "product"
       productId: product.id,
     });
+  },
+];
+
+export const updateProduct = [
+  body("productId", "Product Id is required")
+    .trim()
+    .notEmpty()
+    .isInt({ min: 1 }),
+  body("name", "Name is required.").trim().notEmpty().escape(),
+  body("description", "Description is required.").trim().notEmpty().escape(),
+  body("price", "Price is required.")
+    .isFloat({ min: 0.1 })
+    .isDecimal({ decimal_digits: "1,2" }),
+  body("discount", "Discount is required.")
+    .isFloat({ min: 0 })
+    .isDecimal({ decimal_digits: "1,2" }),
+  body("inventory", "Inventory is required.").isInt({ min: 1 }),
+  body("category", "Category is required.").trim().notEmpty().escape(),
+  body("type", "Type is required.").trim().notEmpty().escape(),
+  body("tags", "Tag is invalid.")
+    .optional({ nullable: true })
+    .customSanitizer((value) => {
+      if (value) {
+        return value.split(",").filter((tag: string) => tag.trim() !== "");
+      }
+      return value;
+    }),
+
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+
+    // Safely cast files array if present
+    const files = (req.files as any[]) || [];
+
+    if (errors.length > 0) {
+      if (files.length > 0) {
+        const originalFiles = files.map((file: any) => file.filename);
+        await removeFiles(originalFiles, null);
+      }
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
+    }
+
+    const {
+      productId,
+      name,
+      description,
+      price,
+      discount,
+      inventory,
+      category,
+      type,
+      tags,
+    } = req.body;
+
+    const product = await getProductById(+productId);
+    if (!product) {
+      if (files.length > 0) {
+        const originalFiles = files.map((file: any) => file.filename);
+        await removeFiles(originalFiles, null);
+      }
+      return next(
+        createError("This data model does not exist.", 409, errorCode.invalid),
+      );
+    }
+
+    // Fixed object mapping syntax
+    let originalFileNames: any[] = [];
+    if (files.length > 0) {
+      originalFileNames = files.map((file: any) => ({
+        path: file.filename,
+      }));
+    }
+
+    const data: any = {
+      name,
+      description,
+      price,
+      discount,
+      inventory,
+      category,
+      type,
+      tags,
+      images: originalFileNames,
+    };
+    if (req.files && req.files.length > 0) {
+      await Promise.all(
+        files.map(async (file: any) => {
+          const splitFileName = file.filename.split(".")[0];
+          return ImageQueue.add(
+            "optimize-image",
+            {
+              filePath: file.path,
+              fileName: `${splitFileName}.webp`,
+              width: 835,
+              height: 577,
+              quality: 100,
+            },
+            {
+              attempts: 3,
+              backoff: {
+                type: "exponential",
+                delay: 1000,
+              },
+            },
+          );
+        }),
+      );
+    }
+
+    //Deleting Old images
+
+    res.status(200).json({ message: "Product updated successfully.", data });
   },
 ];
