@@ -12,7 +12,7 @@ import {
   deleteOneProduct,
   getProductById,
   updateOneProduct,
-} from "../../services/porductService";
+} from "../../services/productService";
 
 import cacheQueue from "../../jobs/queues/cachQueue";
 import { invalid } from "moment";

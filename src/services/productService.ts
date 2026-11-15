@@ -136,3 +136,34 @@ export const deleteOneProduct = async (id: number) => {
     where: { id },
   });
 };
+
+export const getProductWithRelations = async (id: number) => {
+  return prisma.product.findUnique({
+    where: { id },
+    omit: {
+      categoryId: true,
+      typeId: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    include: {
+      images: {
+        select: {
+          id: true,
+          path: true,
+        },
+      },
+    },
+  });
+};
+export const getProductsList = async (options: any) => {
+  return prisma.product.findMany(options);
+};
+
+export const getCategoryList = async () => {
+  return prisma.category.findMany();
+};
+
+export const getTypeList = async () => {
+  return prisma.type.findMany();
+};

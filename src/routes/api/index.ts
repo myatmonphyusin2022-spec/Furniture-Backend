@@ -9,7 +9,12 @@ import {
 } from "../../controllers/api/profileController"; // Folder တစ်ဆင့်ပဲ တက်ရန်
 import { auth } from "../../middlewares/auth"; // Folder တစ်ဆင့်ပဲ တက်ရန်
 import upload, { uploadMemory } from "../../middlewares/uploadFiles"; // Folder တစ်ဆင့်ပဲ တက်ရန်
-import { getPost, getPostsByPagination,getInfinitePostsByPagination} from "../../controllers/api/postController";
+import {
+  getPost,
+  getPostsByPagination,
+  getInfinitePostsByPagination,
+} from "../../controllers/api/postController";
+import { getProduct } from "../../controllers/api/productController";
 
 const router = express.Router();
 
@@ -30,8 +35,9 @@ router.patch(
   uploadMemory.single("avatar"),
   uploadProfileOptimize,
 );
-router.get("/posts",auth,getPostsByPagination);//Offset Pagination
-router.get("/posts/infinite",auth,getInfinitePostsByPagination);//Cursor based Pagination
-router.get("/posts/:id",auth,getPost);
+router.get("/posts", auth, getPostsByPagination); //Offset Pagination
+router.get("/posts/infinite", auth, getInfinitePostsByPagination); //Cursor based Pagination
+router.get("/posts/:id", auth, getPost);
 
+router.get("/products/:id", auth, getProduct);
 export default router;

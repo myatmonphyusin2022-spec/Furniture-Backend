@@ -6,6 +6,7 @@ import { createError } from "../../utils/error";
 import { getUserById } from "../../services/authService";
 import { getPostList, getPostWithRelations } from "../../services/postService";
 import { getOrSetCache } from "../../utils/cache";
+import { checkModelIfExists } from "../../utils/check";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -29,7 +30,7 @@ export const getPost = [
     const post = await getOrSetCache(cacheKey, async () => {
       return await getPostWithRelations(+postId);
     });
-
+    checkModelIfExists(post);
     res.status(200).json({
       message: "Post Detail",
       post,

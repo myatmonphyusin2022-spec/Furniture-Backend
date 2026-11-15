@@ -142,9 +142,11 @@ export const verifyOtp = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
-    const { phone, otp, token } = req.body;
-    const user = await getUserByPhone(phone);
-    checkUserIfNotExist(user);
+    let phone = req.body.phone;
+    if (phone.slice(0, 2) === "09") {
+      phone = phone.substring(2, phone.length);
+    }
+    const { otp, token } = req.body;
 
     const otpRow = await getOtpByPhone(phone);
     checkOtpRow(otpRow);
@@ -220,10 +222,23 @@ export const confirmPassword = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
-    const { phone, password, token } = req.body;
+    let phone = req.body.phone;
+    if (phone.slice(0, 2) === "09") {
+      phone = phone.substring(2, phone.length);
+    }
+    const { password, token } = req.body;
 
+    // Ensure user does NOT already exist before creating them
     const user = await getUserByPhone(phone);
-    checkUserIfNotExist(user);
+    if (user) {
+      return next(
+        createError(
+          "User already exists with this phone number.",
+          400,
+          errorCode.invalid,
+        ),
+      );
+    }
 
     const otpRow = await getOtpByPhone(phone);
     checkOtpRow(otpRow);
