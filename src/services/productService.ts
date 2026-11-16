@@ -167,3 +167,5 @@ export const getCategoryList = async () => {
 export const getTypeList = async () => {
   return prisma.type.findMany();
 };
+
+
